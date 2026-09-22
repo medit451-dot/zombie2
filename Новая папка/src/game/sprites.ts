@@ -4,7 +4,7 @@ import gunsUrl from '../assets/guns-sheet.png';
 
 export type ZAnim = 'idle' | 'walk' | 'run' | 'attack';
 export type HeroAnim = 'idle' | 'walk' | 'run' | 'pose';
-export type ZType = 'walker' | 'runner' | 'tank' | 'brute';
+export type ZType = 'walker' | 'runner' | 'tank' | 'brute' | 'mutant';
 export type GunId = 'sidearm' | 'smg' | 'shotgun' | 'rifle' | 'minigun' | 'railgun';
 export type Frames = HTMLCanvasElement[];
 
@@ -32,7 +32,7 @@ export const gunSprites: GunPack = {
 
 const Z_ANIMS: ZAnim[] = ['idle', 'walk', 'run', 'attack'];
 const H_ANIMS: HeroAnim[] = ['idle', 'walk', 'run', 'pose'];
-const Z_TYPES: ZType[] = ['walker', 'runner', 'tank', 'brute'];
+const Z_TYPES: ZType[] = ['walker', 'runner', 'tank', 'brute', 'mutant'];
 
 export interface ZombiePack {
   ready: boolean; fw: number; fh: number;
@@ -55,7 +55,7 @@ const emptyH = (): Record<HeroAnim, Frames> => ({ idle: [], walk: [], run: [], p
 
 export const zombieSprites: ZombiePack = {
   ready: false, fw: 0, fh: 0,
-  frames: { walker: emptyZ(), runner: emptyZ(), tank: emptyZ(), brute: emptyZ() },
+  frames: { walker: emptyZ(), runner: emptyZ(), tank: emptyZ(), brute: emptyZ(), mutant: emptyZ() },
   flash: emptyZ(),
   counts: { idle: 0, walk: 0, run: 0, attack: 0 },
   portrait: null,
@@ -432,6 +432,7 @@ const Z_VARIANT: Record<ZType, (f: HTMLCanvasElement) => HTMLCanvasElement> = {
   runner: (f) => overlay(f, 'rgba(210,255,120,.22)'),
   tank:   (f) => overlay(f, 'rgba(40,60,30,.18)', 'rgb(190,185,175)'),
   brute:  (f) => overlay(f, 'rgba(150,60,200,.42)', 'rgb(220,200,240)'),
+  mutant: (f) => overlay(f, 'rgba(40,255,120,.48)', 'rgb(160,240,180)'),
 };
 
 function toDataUrl(c: HTMLCanvasElement | undefined | null) {

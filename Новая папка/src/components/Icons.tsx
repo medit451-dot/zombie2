@@ -53,7 +53,18 @@ export const IconSpread = (p: P) => (
   <S {...p}><path d="M12 12V4M12 12L5 6M12 12l7-6M12 12v8" /><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" /></S>
 );
 export const IconTurret = (p: P) => (
-  <S {...p}><circle cx="12" cy="12" r="7.5" /><path d="M12 4.5V7M12 17v2.5M4.5 12H7M17 12h2.5" /><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" /></S>
+  <S {...p}>
+    {/* Tripod legs */}
+    <path d="M12 11l-7 10M12 11l7 10M12 11v10" strokeWidth={2.2} />
+    {/* Tripod brace */}
+    <path d="M8.5 16h7" strokeWidth={1.8} />
+    {/* Swivel mount / gun body */}
+    <rect x="7" y="8" width="9" height="5" rx="1.5" fill="currentColor" />
+    {/* Heavy machine gun barrel with muzzle brake */}
+    <path d="M16 10.5h6M21 9v3" strokeWidth={2.2} />
+    {/* Ammo can on side */}
+    <rect x="5.5" y="11" width="4" height="4" rx="0.5" fill="currentColor" stroke="none" />
+  </S>
 );
 export const IconBoots = (p: P) => (
   <S {...p}><path d="M8 4v9l5 2v3h4.5a2 2 0 002-2v-2.5L12 11V4z" /><path d="M8 4H6.5v9" /></S>

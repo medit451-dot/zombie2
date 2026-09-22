@@ -15,7 +15,8 @@ let muted = false;
 let amb: {
   wind: GainNode; windFilter: BiquadFilterNode; drone: GainNode; droneOsc: OscillatorNode;
   droneOsc2: OscillatorNode; hum: GainNode; heart: GainNode; heartT: number;
-  started: boolean; intensity: number; danger: number;
+  bossDrone: GainNode; bossOsc: OscillatorNode;
+  started: boolean; intensity: number; danger: number; bossMode: boolean;
 } | null = null;
 
 export function initAudio() {
@@ -172,19 +173,28 @@ export function startAmbience() {
 
   const heart = ctx.createGain(); heart.gain.value = 1; heart.connect(ambBus);
 
-  amb = { wind, windFilter, drone, droneOsc, droneOsc2, hum, heart, heartT: 0, started: true, intensity: 0, danger: 0 };
+  // Heavy boss warhorn / apocalyptic sub-bass drone
+  const bossOsc = ctx.createOscillator(); bossOsc.type = 'sawtooth'; bossOsc.frequency.value = 32;
+  const bFilt = ctx.createBiquadFilter(); bFilt.type = 'lowpass'; bFilt.frequency.value = 110; bFilt.Q.value = 3;
+  const bossDrone = ctx.createGain(); bossDrone.gain.value = 0.0;
+  bossOsc.connect(bFilt); bFilt.connect(bossDrone); bossDrone.connect(ambBus);
+  bossOsc.start(t0);
+
+  amb = { wind, windFilter, drone, droneOsc, droneOsc2, hum, heart, heartT: 0, bossDrone, bossOsc, started: true, intensity: 0, danger: 0, bossMode: false };
   ambBus.gain.setTargetAtTime(1, t0, 0.8);
 }
 
-/** intensity: 0 menu … 1 full siege · danger: 0..1 low-health heartbeat */
-export function setAmbience(intensity: number, danger: number, hiveAlive: boolean) {
+/** intensity: 0 menu … 1 full siege · danger: 0..1 low-health heartbeat · bossMode: heavy war atmosphere */
+export function setAmbience(intensity: number, danger: number, hiveAlive: boolean, bossMode = false) {
   if (!ctx || !amb) return;
   const t = ctx.currentTime;
-  amb.intensity = intensity; amb.danger = danger;
+  amb.intensity = intensity; amb.danger = danger; amb.bossMode = bossMode;
   amb.drone.gain.setTargetAtTime(hiveAlive ? 0.05 + intensity * 0.07 : 0.0, t, 0.6);
   amb.droneOsc.frequency.setTargetAtTime(hiveAlive ? 41 + intensity * 6 : 30, t, 1.2);
-  amb.wind.gain.setTargetAtTime(0.06 + intensity * 0.05, t, 0.8);
+  amb.wind.gain.setTargetAtTime(0.06 + intensity * 0.05 + (bossMode ? 0.04 : 0), t, 0.8);
   amb.hum.gain.setTargetAtTime(0.02 + intensity * 0.015, t, 0.5);
+  amb.bossDrone.gain.setTargetAtTime(bossMode ? 0.16 : 0.0, t, 0.7);
+  amb.bossOsc.frequency.setTargetAtTime(bossMode ? 36 + Math.sin(t * 1.5) * 6 : 32, t, 0.9);
 }
 
 /** call every frame; schedules heartbeat thumps when danger > 0 */
@@ -375,10 +385,31 @@ export const sfx = {
     tone({ freq: 130, freq2: 34, dur: 0.55, type: 'sine', vol: 0.3 });
     tone({ freq: 70, freq2: 28, dur: 0.6, type: 'triangle', vol: 0.22 });
   },
-  rush() {
-    tone({ freq: 60, freq2: 150, dur: 0.55, type: 'sawtooth', vol: 0.12, detune: 8, send: 0.7 });
-    tone({ freq: 62, freq2: 140, dur: 0.55, type: 'sawtooth', vol: 0.1, detune: -10, delay: 0.04, send: 0.7 });
-    noise({ dur: 0.5, vol: 0.06, lp: 400, lp2: 900, delay: 0.1 });
+  /* ---- boss effects ---- */
+  bossSpawn() {
+    tone({ freq: 50, freq2: 28, dur: 1.4, type: 'sawtooth', vol: 0.32, send: 1.0 });
+    tone({ freq: 75, freq2: 45, dur: 1.2, type: 'sawtooth', vol: 0.26, detune: 10, send: 0.9 });
+    noise({ dur: 1.2, vol: 0.35, lp: 800, lp2: 90, send: 1.0 });
+    // war horn / alarm scream
+    tone({ freq: 110, freq2: 175, dur: 0.85, type: 'square', vol: 0.18, delay: 0.2, send: 0.8 });
+  },
+  axeSlash() {
+    noise({ dur: 0.18, vol: 0.24, hp: 600, lp: 4200, lp2: 1100, send: 0.6 });
+    tone({ freq: 360, freq2: 85, dur: 0.22, type: 'sawtooth', vol: 0.18 });
+  },
+  bossHit() {
+    noise({ dur: 0.12, vol: 0.18, lp: 1600, lp2: 300 });
+    tone({ freq: 110, freq2: 50, dur: 0.14, type: 'square', vol: 0.15 });
+  },
+  bossRoar() {
+    tone({ freq: 95, freq2: 48, dur: 0.9, type: 'sawtooth', vol: 0.28, send: 0.9 });
+    tone({ freq: 140, freq2: 65, dur: 0.8, type: 'square', vol: 0.16, detune: -15, delay: 0.05, send: 0.8 });
+    noise({ dur: 0.85, vol: 0.22, lp: 1200, lp2: 220, delay: 0.08, send: 0.7 });
+  },
+  bossDie() {
+    tone({ freq: 90, freq2: 24, dur: 1.6, type: 'sawtooth', vol: 0.35, send: 1.0 });
+    noise({ dur: 1.4, vol: 0.4, lp: 2400, lp2: 70, send: 1.0 });
+    tone({ freq: 45, freq2: 20, dur: 1.8, type: 'sine', vol: 0.3 });
   },
 
   /* ---- economy / ui ---- */

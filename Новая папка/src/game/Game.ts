@@ -26,27 +26,34 @@ const angLerp = (a: number, b: number, t: number) => {
   return a + d * t;
 };
 
-type ZType = 'walker' | 'runner' | 'tank' | 'brute';
+type ZType = 'walker' | 'runner' | 'tank' | 'brute' | 'mutant';
 
 interface ZDef { hp: number; speed: number; dmg: number; r: number; score: number; coin: [number, number]; }
 const ZDEFS: Record<ZType, ZDef> = {
-  walker: { hp: 30, speed: 42, dmg: 9, r: 14, score: 100, coin: [4, 7] },
-  runner: { hp: 20, speed: 94, dmg: 6, r: 11, score: 150, coin: [3, 6] },
-  tank:   { hp: 135, speed: 30, dmg: 18, r: 21, score: 300, coin: [10, 15] },
-  brute:  { hp: 270, speed: 38, dmg: 26, r: 26, score: 500, coin: [18, 28] },
+  walker: { hp: 20, speed: 34, dmg: 5, r: 14, score: 100, coin: [6, 10] },
+  runner: { hp: 14, speed: 68, dmg: 4, r: 11, score: 150, coin: [5, 9] },
+  tank:   { hp: 65,  speed: 24, dmg: 10, r: 21, score: 300, coin: [15, 24] },
+  brute:  { hp: 120, speed: 30, dmg: 14, r: 26, score: 500, coin: [25, 40] },
+  mutant: { hp: 75,  speed: 40, dmg: 11, r: 18, score: 400, coin: [18, 30] },
 };
 
 interface LevelCfg {
   name: string; lairHp: number; interval: number; cap: number; rush: number;
   hpMul: number; dmgMul: number; spdMul: number; r: number;
   weights: [ZType, number][];
+  totalZombies: number;
 }
 const LEVELS: LevelCfg[] = [
-  { name: 'OUTBREAK',    lairHp: 170, interval: 1.90, cap: 16, rush: 15,  hpMul: 1,    dmgMul: 1,    spdMul: 1,    r: 56, weights: [['walker', .92], ['runner', .08]] },
-  { name: 'ESCALATION',  lairHp: 300, interval: 1.60, cap: 19, rush: 13,  hpMul: 1.2,  dmgMul: 1.08, spdMul: 1.04, r: 62, weights: [['walker', .72], ['runner', .22], ['tank', .06]] },
-  { name: 'ONSLAUGHT',   lairHp: 450, interval: 1.35, cap: 22, rush: 11,  hpMul: 1.45, dmgMul: 1.18, spdMul: 1.10, r: 68, weights: [['walker', .55], ['runner', .3], ['tank', .15]] },
-  { name: 'OVERRUN',     lairHp: 640, interval: 1.15, cap: 25, rush: 9.5, hpMul: 1.75, dmgMul: 1.3,  spdMul: 1.16, r: 74, weights: [['walker', .44], ['runner', .31], ['tank', .16], ['brute', .09]] },
-  { name: 'APOCALYPSE',  lairHp: 900, interval: 0.95, cap: 28, rush: 8,   hpMul: 2.15, dmgMul: 1.45, spdMul: 1.24, r: 82, weights: [['walker', .34], ['runner', .3], ['tank', .2], ['brute', .16]] },
+  { name: 'OUTBREAK',     lairHp: 220, interval: 2.60, cap: 8,  rush: 20.0, hpMul: 0.85, dmgMul: 0.80, spdMul: 0.90, r: 58, totalZombies: 12, weights: [['walker', .92], ['runner', .08]] },
+  { name: 'INFESTATION', lairHp: 280, interval: 2.40, cap: 9,  rush: 19.0, hpMul: 0.90, dmgMul: 0.85, spdMul: 0.92, r: 60, totalZombies: 15, weights: [['walker', .82], ['runner', .14], ['tank', .04]] },
+  { name: 'ESCALATION',   lairHp: 350, interval: 2.25, cap: 10, rush: 18.0, hpMul: 0.95, dmgMul: 0.90, spdMul: 0.94, r: 62, totalZombies: 18, weights: [['walker', .72], ['runner', .18], ['tank', .06], ['mutant', .04]] },
+  { name: 'MUTATION',     lairHp: 440, interval: 2.10, cap: 11, rush: 17.0, hpMul: 1.00, dmgMul: 0.95, spdMul: 0.96, r: 66, totalZombies: 20, weights: [['walker', .60], ['runner', .20], ['tank', .10], ['mutant', .08], ['brute', .02]] },
+  { name: 'ONSLAUGHT',    lairHp: 540, interval: 2.00, cap: 12, rush: 16.0, hpMul: 1.06, dmgMul: 1.00, spdMul: 0.98, r: 70, totalZombies: 22, weights: [['walker', .50], ['runner', .22], ['tank', .12], ['mutant', .12], ['brute', .04]] },
+  { name: 'OVERRUN',      lairHp: 650, interval: 1.90, cap: 13, rush: 15.0, hpMul: 1.12, dmgMul: 1.05, spdMul: 1.00, r: 72, totalZombies: 24, weights: [['walker', .44], ['runner', .24], ['tank', .14], ['mutant', .12], ['brute', .06]] },
+  { name: 'BLOODBATH',    lairHp: 770, interval: 1.80, cap: 14, rush: 14.0, hpMul: 1.18, dmgMul: 1.10, spdMul: 1.02, r: 76, totalZombies: 26, weights: [['walker', .38], ['runner', .24], ['tank', .15], ['mutant', .14], ['brute', .09]] },
+  { name: 'CATACLYSM',    lairHp: 900, interval: 1.70, cap: 14, rush: 13.5, hpMul: 1.25, dmgMul: 1.14, spdMul: 1.04, r: 80, totalZombies: 28, weights: [['walker', .32], ['runner', .25], ['tank', .16], ['mutant', .15], ['brute', .12]] },
+  { name: 'APOCALYPSE',   lairHp: 1050, interval: 1.60, cap: 15, rush: 13.0, hpMul: 1.32, dmgMul: 1.18, spdMul: 1.06, r: 84, totalZombies: 30, weights: [['walker', .28], ['runner', .25], ['tank', .17], ['mutant', .16], ['brute', .14]] },
+  { name: 'EXTINCTION',   lairHp: 1250, interval: 1.50, cap: 16, rush: 12.0, hpMul: 1.40, dmgMul: 1.22, spdMul: 1.08, r: 88, totalZombies: 32, weights: [['walker', .22], ['runner', .24], ['tank', .18], ['mutant', .18], ['brute', .18]] },
 ];
 export const LEVEL_COUNT = LEVELS.length;
 
@@ -116,16 +123,16 @@ export const WEAPON_ORDER: WeaponId[] = ['sidearm', 'smg', 'shotgun', 'rifle', '
 type ShopId = 'repair' | 'walls' | 'damage' | 'firerate' | 'multishot' | 'turret' | 'speed' | 'tesla' | 'barricade' | 'medbay';
 export type { ShopId };
 const SHOP_DEFS: Record<ShopId, { name: string; desc: string; base: number; growth: number; max: number; icon: string; group: 'base' | 'hero' }> = {
-  repair:    { name: 'Field Repair',     desc: 'Restore 35% bunker integrity',                 base: 45,  growth: 1.5,  max: Infinity, icon: 'wrench', group: 'base' },
-  walls:     { name: 'Armor Plating',    desc: '+30 max integrity, bolts plate onto the hull',  base: 60,  growth: 1.6,  max: 5,  icon: 'shield',    group: 'base' },
-  barricade: { name: 'Razor Barricade',  desc: 'Wire line that slows & cuts anything crossing', base: 90,  growth: 1.7,  max: 3,  icon: 'wire',      group: 'base' },
-  turret:    { name: 'Sentry Tower',     desc: 'Raise a turret tower on the bunker flank',      base: 130, growth: 1.7,  max: 2,  icon: 'turret',    group: 'base' },
-  tesla:     { name: 'Tesla Emitter',    desc: 'Arc coil chains lightning through the horde',   base: 260, growth: 1.9,  max: 3,  icon: 'bolt',      group: 'base' },
-  medbay:    { name: 'Med Station',      desc: 'Heals you fast while standing near the bunker', base: 120, growth: 1.8,  max: 2,  icon: 'cross',     group: 'base' },
-  damage:    { name: 'HP Rounds',        desc: '+30% bullet damage',                            base: 55,  growth: 1.42, max: 8,  icon: 'bullet',    group: 'hero' },
-  firerate:  { name: 'Rapid Fire',       desc: '+14% fire rate',                                base: 50,  growth: 1.42, max: 8,  icon: 'gauge',     group: 'hero' },
-  multishot: { name: 'Multi-Shot',       desc: '+1 projectile per volley',                      base: 95,  growth: 1.6,  max: 3,  icon: 'spread',    group: 'hero' },
-  speed:     { name: 'Combat Boots',     desc: '+9% move speed',                                base: 45,  growth: 1.5,  max: 4,  icon: 'boots',     group: 'hero' },
+  repair:    { name: 'Field Repair',       desc: 'Restore 35% bunker integrity',                   base: 45,  growth: 1.5,  max: Infinity, icon: 'wrench', group: 'base' },
+  walls:     { name: 'Armor Plating',      desc: '+30 max integrity, bolts plate onto the hull',    base: 60,  growth: 1.6,  max: 5,  icon: 'shield',    group: 'base' },
+  barricade: { name: 'Razor Barricade',    desc: 'Wire line that slows & cuts anything crossing',   base: 90,  growth: 1.7,  max: 3,  icon: 'wire',      group: 'base' },
+  turret:    { name: 'Machine Gun Tower',  desc: 'Heavy machine gun sentry mounted next to base',   base: 130, growth: 1.7,  max: 4,  icon: 'turret',    group: 'base' },
+  tesla:     { name: 'Tesla Emitter',      desc: 'Arc coil chains lightning through the horde',     base: 260, growth: 1.9,  max: 3,  icon: 'bolt',      group: 'base' },
+  medbay:    { name: 'Med Station',        desc: 'Heals you fast while standing near the bunker',   base: 120, growth: 1.8,  max: 2,  icon: 'cross',     group: 'base' },
+  damage:    { name: 'HP Rounds',          desc: '+30% bullet damage',                              base: 55,  growth: 1.42, max: 8,  icon: 'bullet',    group: 'hero' },
+  firerate:  { name: 'Rapid Fire',         desc: '+14% fire rate',                                  base: 50,  growth: 1.42, max: 8,  icon: 'gauge',     group: 'hero' },
+  multishot: { name: 'Multi-Shot',         desc: '+1 projectile per volley',                        base: 95,  growth: 1.6,  max: 3,  icon: 'spread',    group: 'hero' },
+  speed:     { name: 'Combat Boots',       desc: '+9% move speed',                                  base: 45,  growth: 1.5,  max: 4,  icon: 'boots',     group: 'hero' },
 };
 
 interface Bullet {
@@ -147,7 +154,7 @@ interface Zombie {
   /** 0..1 rise-out-of-the-ground intro */
   spawnT: number;
   /** -1 when not attacking, else seconds into the wind-up/swipe */
-  attackT: number; struck: boolean; atkTarget: 'player' | 'base';
+  attackT: number; struck: boolean; atkTarget: 'player' | 'base' | 'turret'; targetTurretId?: number;
   dead?: boolean; flee?: boolean; ambient?: boolean; tx: number; ty: number; retarget: number;
 }
 interface Corpse {
@@ -161,7 +168,22 @@ interface Particle {
 }
 interface Ring { x: number; y: number; r: number; vr: number; life: number; max: number; color: string; w: number; }
 interface FloatText { x: number; y: number; vy: number; life: number; max: number; text: string; color: string; size: number; }
-interface Turret { ox: number; x: number; y: number; ang: number; cd: number; recoil: number; heat: number; build: number; }
+interface Turret {
+  id: number;
+  ox: number;
+  x: number;
+  y: number;
+  r: number;
+  hp: number;
+  maxHp: number;
+  flash: number;
+  dead: boolean;
+  ang: number;
+  cd: number;
+  recoil: number;
+  heat: number;
+  build: number;
+}
 interface Upgrades {
   repair: number; walls: number; damage: number; firerate: number; multishot: number;
   turret: number; speed: number; tesla: number; barricade: number; medbay: number;
@@ -241,8 +263,10 @@ export class Game {
     alarm: 0, teslaCd: 0, teslaCharge: 0, medPulse: 0, buildT: 0,
   };
   private lair = {
-    x: 480, y: 96, r: 58, hp: 180, maxHp: 180, alive: true, deadT: 0,
+    x: 550, y: 110, r: 64, hp: 180, maxHp: 180, alive: true, deadT: 0,
     spawnT: 1.2, rushT: 16, telegraph: 0, burst: 0, hitFlash: 0, pulse: 0, goopT: 0, burp: 0,
+    regenCd: 6.0, regenT: 6.0,
+    spawnedCount: 0,
     bumps: [] as { x: number; y: number; r: number; ph: number }[],
   };
   private turrets: Turret[] = [];
@@ -379,9 +403,10 @@ export class Game {
     this.canvas.style.height = `${h}px`;
 
     const aspect = w / h;
-    let wh = 600, ww = 600 * aspect;
-    if (ww < 420) { ww = 420; wh = ww / aspect; }
-    if (ww > 1150) { ww = 1150; wh = ww / aspect; }
+    // Expanded map world coordinate bounds for a significantly larger battlefield
+    let wh = 780, ww = 780 * aspect;
+    if (ww < 560) { ww = 560; wh = ww / aspect; }
+    if (ww > 1450) { ww = 1450; wh = ww / aspect; }
     this.world.w = Math.round(ww);
     this.world.h = Math.round(wh);
 
@@ -390,11 +415,11 @@ export class Game {
     this.oy = (h - this.world.h * this.viewScale) / 2;
 
     this.base.x = this.world.w / 2;
-    this.base.y = this.world.h - 92;
+    this.base.y = this.world.h - 110;
     this.lair.x = this.world.w / 2;
-    this.lair.y = 96;
-    this.player.x = clamp(this.player.x, 28, this.world.w - 28);
-    this.player.y = clamp(this.player.y, 80, this.world.h - 48);
+    this.lair.y = 110;
+    this.player.x = clamp(this.player.x, 32, this.world.w - 32);
+    this.player.y = clamp(this.player.y, 90, this.world.h - 52);
     this.syncTurrets(true);
     this.prerenderGround();
   };
@@ -419,182 +444,187 @@ export class Game {
     const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
     const rr = (a: number, b: number) => a + rnd() * (b - a);
 
-    g.fillStyle = '#0b0e11';
+    // Deep apocalyptic underground bunker atmosphere
+    g.fillStyle = '#080b0e';
     g.fillRect(0, 0, w, h);
 
-    /* ---- industrial grate floor ---- */
-    const T = 80;
+    /* ---- High-detail modular military floor plating with hazard corridors ---- */
+    const T = 70;
     const cols = Math.ceil(w / T), rows = Math.ceil(h / T);
     const ox = Math.round((w - cols * T) / 2), oy = Math.round((h - rows * T) / 2);
-    const m = 7;              // frame width
-    const n = 5;              // grate cells per tile
+    const m = 5;
+
     for (let ty = 0; ty < rows; ty++) {
       for (let tx = 0; tx < cols; tx++) {
         const x = ox + tx * T, y = oy + ty * T;
         const v = rnd();
-        const kind = v < 0.68 ? 'grate' : v < 0.86 ? 'plate' : 'broken';
-        const tone = rr(-10, 10);
+        const distFromCenter = Math.abs(x - w / 2) / (w / 2);
+        const isRunway = distFromCenter < 0.28;
+        const kind = isRunway ? (v < 0.5 ? 'treadplate' : 'grate') : (v < 0.45 ? 'grate' : v < 0.8 ? 'plate' : 'corroded');
+        const tone = rr(-12, 12);
 
-        // frame with bevel
-        g.fillStyle = `rgb(${30 + tone},${37 + tone},${42 + tone})`;
+        // Heavy steel tile border with 3D industrial bevel
+        g.fillStyle = `rgb(${24 + tone},${30 + tone},${35 + tone})`;
         g.fillRect(x, y, T, T);
-        g.fillStyle = 'rgba(255,255,255,.07)'; g.fillRect(x, y, T, 2); g.fillRect(x, y, 2, T);
-        g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(x, y + T - 2, T, 2); g.fillRect(x + T - 2, y, 2, T);
+        g.fillStyle = 'rgba(255,255,255,.09)'; g.fillRect(x, y, T, 1.5); g.fillRect(x, y, 1.5, T);
+        g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(x, y + T - 1.5, T, 1.5); g.fillRect(x + T - 1.5, y, 1.5, T);
 
         const ix = x + m, iy = y + m, iw = T - m * 2;
-        if (kind === 'plate') {
-          g.fillStyle = `rgb(${38 + tone},${46 + tone},${51 + tone})`;
+
+        if (kind === 'treadplate') {
+          // Reinforced diamond tread plate
+          g.fillStyle = `rgb(${34 + tone},${42 + tone},${47 + tone})`;
           g.fillRect(ix, iy, iw, iw);
-          // tread scratches + rivets
-          g.strokeStyle = 'rgba(0,0,0,.22)'; g.lineWidth = 1;
-          for (let s = 0; s < 4; s++) {
-            const sx = ix + rr(4, iw - 4), sy = iy + rr(4, iw - 4);
-            g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + rr(-14, 14), sy + rr(-6, 6)); g.stroke();
-          }
-          for (const [cx, cy] of [[ix + 5, iy + 5], [ix + iw - 5, iy + 5], [ix + 5, iy + iw - 5], [ix + iw - 5, iy + iw - 5]]) {
-            g.fillStyle = '#4a555c'; g.beginPath(); g.arc(cx, cy, 2.4, 0, TAU); g.fill();
-            g.fillStyle = 'rgba(0,0,0,.5)'; g.beginPath(); g.arc(cx + 0.6, cy + 0.6, 1.1, 0, TAU); g.fill();
-          }
-        } else {
-          // the dark pit beneath the grating
-          g.fillStyle = '#05070a';
-          g.fillRect(ix, iy, iw, iw);
-          const cell = iw / n, bw = 3.2;
-          const bar = `rgb(${46 + tone},${56 + tone},${62 + tone})`;
-          const missing = new Set<number>();
-          if (kind === 'broken') { const k = 1 + Math.floor(rnd() * 3); for (let i = 0; i < k; i++) missing.add(Math.floor(rnd() * (n * 2 + 2))); }
-          for (let i = 0; i <= n; i++) {
-            const p = ix + i * cell;
-            if (!missing.has(i)) { g.fillStyle = bar; g.fillRect(p - bw / 2, iy, bw, iw); }
-            if (!missing.has(n + 1 + i)) {
-              g.fillStyle = bar; g.fillRect(ix, p - bw / 2, iw, bw);
-              g.fillStyle = 'rgba(255,255,255,.09)'; g.fillRect(ix, p - bw / 2, iw, 1);
+          g.strokeStyle = 'rgba(0,0,0,.35)';
+          g.lineWidth = 1.2;
+          for (let py = iy + 4; py < iy + iw - 4; py += 10) {
+            for (let px = ix + 4; px < ix + iw - 4; px += 10) {
+              g.beginPath();
+              g.moveTo(px, py); g.lineTo(px + 4, py + 4);
+              g.stroke();
             }
           }
-          if (kind === 'broken') {
-            // a torn hole with bent bars
-            const hx = ix + rr(8, iw - 22), hy = iy + rr(8, iw - 22);
-            g.fillStyle = '#020304'; g.beginPath(); g.ellipse(hx + 8, hy + 8, 13, 9, rr(0, 3), 0, TAU); g.fill();
-            g.strokeStyle = bar; g.lineWidth = 2.6; g.lineCap = 'round';
-            g.beginPath(); g.moveTo(hx - 2, hy + 6); g.lineTo(hx + 6, hy + 14); g.lineTo(hx + 4, hy + 20); g.stroke();
+          // Perimeter corner hex-bolts
+          for (const [cx, cy] of [[ix + 4, iy + 4], [ix + iw - 4, iy + 4], [ix + 4, iy + iw - 4], [ix + iw - 4, iy + iw - 4]]) {
+            g.fillStyle = '#67757f'; g.beginPath(); g.arc(cx, cy, 2, 0, TAU); g.fill();
+            g.fillStyle = '#111417'; g.beginPath(); g.arc(cx, cy, 0.9, 0, TAU); g.fill();
+          }
+        } else if (kind === 'plate') {
+          g.fillStyle = `rgb(${30 + tone},${38 + tone},${43 + tone})`;
+          g.fillRect(ix, iy, iw, iw);
+          // Welded seams & metal gouges
+          g.strokeStyle = 'rgba(0,0,0,.3)'; g.lineWidth = 1;
+          for (let s = 0; s < 3; s++) {
+            const sx = ix + rr(5, iw - 5), sy = iy + rr(5, iw - 5);
+            g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + rr(-18, 18), sy + rr(-8, 8)); g.stroke();
+          }
+          // Rivets
+          for (const [cx, cy] of [[ix + 5, iy + 5], [ix + iw - 5, iy + 5], [ix + 5, iy + iw - 5], [ix + iw - 5, iy + iw - 5]]) {
+            g.fillStyle = '#56626b'; g.beginPath(); g.arc(cx, cy, 2.2, 0, TAU); g.fill();
+          }
+        } else if (kind === 'corroded') {
+          // Biohazard corroded bio-seepage ground
+          g.fillStyle = '#06080a';
+          g.fillRect(ix, iy, iw, iw);
+          const pitG = g.createRadialGradient(ix + iw / 2, iy + iw / 2, 2, ix + iw / 2, iy + iw / 2, iw * 0.6);
+          pitG.addColorStop(0, 'rgba(40,110,35,.55)');
+          pitG.addColorStop(0.7, 'rgba(15,40,18,.3)');
+          pitG.addColorStop(1, '#06080a');
+          g.fillStyle = pitG;
+          g.fillRect(ix, iy, iw, iw);
+          // Broken slag
+          g.fillStyle = '#1c221e';
+          g.beginPath();
+          g.ellipse(ix + rr(8, iw - 8), iy + rr(8, iw - 8), rr(8, 16), rr(5, 12), rr(0, TAU), 0, TAU);
+          g.fill();
+        } else {
+          // Sub-level drainage pit beneath open steel grating
+          g.fillStyle = '#030508';
+          g.fillRect(ix, iy, iw, iw);
+          const cell = iw / 5, bw = 3;
+          const bar = `rgb(${40 + tone},${50 + tone},${56 + tone})`;
+          for (let i = 0; i <= 5; i++) {
+            const p = ix + i * cell;
+            g.fillStyle = bar;
+            g.fillRect(p - bw / 2, iy, bw, iw);
+            g.fillRect(ix, p - bw / 2, iw, bw);
+            g.fillStyle = 'rgba(255,255,255,.07)';
+            g.fillRect(ix, p - bw / 2, iw, 0.8);
           }
         }
-        // grime / oil variation
-        if (rnd() < 0.55) {
-          g.fillStyle = `rgba(0,0,0,${rr(.06, .24)})`;
-          g.beginPath(); g.ellipse(x + rr(10, T - 10), y + rr(10, T - 10), rr(14, 34), rr(8, 22), rr(0, TAU), 0, TAU); g.fill();
+
+        // Grime & toxic residue accumulation
+        if (rnd() < 0.6) {
+          g.fillStyle = `rgba(0,0,0,${rr(.08, .26)})`;
+          g.beginPath();
+          g.ellipse(x + rr(8, T - 8), y + rr(8, T - 8), rr(15, 36), rr(8, 24), rr(0, TAU), 0, TAU);
+          g.fill();
         }
-        // rust bleeding down from the frame
-        if (rnd() < 0.3) {
-          const sx = x + rr(6, T - 6);
-          const rg2 = g.createLinearGradient(0, y, 0, y + rr(20, 50));
-          rg2.addColorStop(0, 'rgba(150,80,30,.28)'); rg2.addColorStop(1, 'rgba(150,80,30,0)');
-          g.fillStyle = rg2; g.fillRect(sx - rr(1.5, 4), y, rr(3, 8), 50);
+        // Slime drips towards the top
+        if (y < h * 0.45 && rnd() < 0.35) {
+          g.fillStyle = `rgba(50,180,60,${rr(.08, .22)})`;
+          g.beginPath();
+          g.ellipse(x + rr(6, T - 6), y + rr(6, T - 6), rr(10, 28), rr(6, 16), rr(0, TAU), 0, TAU);
+          g.fill();
         }
       }
     }
 
-    /* ---- ambient light: toxic top, cool bottom ---- */
-    let rg = g.createRadialGradient(w / 2, 100, 10, w / 2, 100, 360);
-    rg.addColorStop(0, 'rgba(90,220,80,.16)'); rg.addColorStop(1, 'rgba(90,220,80,0)');
-    g.fillStyle = rg; g.fillRect(0, 0, w, 420);
-    rg = g.createRadialGradient(w / 2, h - 90, 10, w / 2, h - 90, 340);
-    rg.addColorStop(0, 'rgba(70,180,220,.10)'); rg.addColorStop(1, 'rgba(70,180,220,0)');
-    g.fillStyle = rg; g.fillRect(0, h - 420, w, 420);
-
-    /* ---- bunker cabling ---- */
-    const bx = w / 2, by = h - 92;
-    const cable = (x2: number, y2: number, cx: number, cy: number, core: string) => {
-      g.lineCap = 'round';
-      g.strokeStyle = '#0a0c0e'; g.lineWidth = 5;
-      g.beginPath(); g.moveTo(bx + rr(-20, 20), by + 10); g.quadraticCurveTo(cx, cy, x2, y2); g.stroke();
-      g.strokeStyle = core; g.lineWidth = 2;
-      g.stroke();
-    };
-    cable(bx - 120, h + 10, bx - 60, by + 40, '#b8262a');
-    cable(bx + 140, h + 10, bx + 70, by + 30, '#2a7ab8');
-    cable(bx + 90, h + 10, bx + 30, by + 60, '#1c1f22');
-    cable(-10, h - 40, bx - 200, by + 40, '#b8262a');
-
-    /* ---- painted caution markings near the bunker ---- */
+    /* ---- Central Sector Markings & Runway Guidance Lines ---- */
     g.save();
-    g.globalAlpha = 0.28;
-    g.strokeStyle = '#d9b341'; g.lineWidth = 4; g.setLineDash([16, 12]);
-    g.beginPath(); g.arc(bx, by, 96, Math.PI * 1.08, Math.PI * 1.92); g.stroke();
+    g.strokeStyle = '#d49b28';
+    g.lineWidth = 3.5;
+    g.setLineDash([24, 20]);
+    g.globalAlpha = 0.32;
+    g.beginPath();
+    g.moveTo(w / 2 - 140, 160); g.lineTo(w / 2 - 140, h - 140);
+    g.moveTo(w / 2 + 140, 160); g.lineTo(w / 2 + 140, h - 140);
+    g.stroke();
+    // Cross-zone barricade guide line
+    g.beginPath();
+    g.moveTo(w * 0.15, h * 0.52); g.lineTo(w * 0.85, h * 0.52);
+    g.stroke();
     g.setLineDash([]);
     g.restore();
 
-    /* ---- old blood ---- */
+    /* ---- High-atmosphere Lighting Gradient (Bio-luminescent North vs Tactical Cyan South) ---- */
+    let rg = g.createRadialGradient(w / 2, 110, 20, w / 2, 110, 520);
+    rg.addColorStop(0, 'rgba(80,240,70,.22)');
+    rg.addColorStop(0.5, 'rgba(50,180,60,.09)');
+    rg.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = rg; g.fillRect(0, 0, w, h * 0.65);
+
+    rg = g.createRadialGradient(w / 2, h - 110, 20, w / 2, h - 110, 480);
+    rg.addColorStop(0, 'rgba(55,190,240,.15)');
+    rg.addColorStop(0.6, 'rgba(30,120,180,.06)');
+    rg.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = rg; g.fillRect(0, h * 0.45, w, h * 0.55);
+
+    /* ---- Heavy Conduit & High-voltage Cables across the base ---- */
+    const bx = w / 2, by = h - 110;
+    const cable = (x2: number, y2: number, cx: number, cy: number, core: string) => {
+      g.lineCap = 'round';
+      g.strokeStyle = '#050709'; g.lineWidth = 6;
+      g.beginPath(); g.moveTo(bx + rr(-30, 30), by + 12); g.quadraticCurveTo(cx, cy, x2, y2); g.stroke();
+      g.strokeStyle = core; g.lineWidth = 2.4;
+      g.stroke();
+    };
+    cable(bx - 260, h + 20, bx - 130, by + 50, '#c72e33');
+    cable(bx + 280, h + 20, bx + 140, by + 40, '#2e8dc7');
+    cable(bx + 180, h + 20, bx + 70, by + 75, '#e0a020');
+    cable(-20, h - 80, bx - 320, by + 50, '#c72e33');
+    cable(w + 20, h - 80, bx + 320, by + 50, '#2e8dc7');
+
+    /* ---- Blood Splatters & Zombie Gore Pools ---- */
     const splat = (x: number, y: number, s: number, a: number, col: string) => {
       g.fillStyle = col; g.globalAlpha = a;
-      g.beginPath(); g.ellipse(x, y, s, s * rr(.55, .9), rr(0, TAU), 0, TAU); g.fill();
-      const k = 6 + Math.floor(rnd() * 10);
+      g.beginPath(); g.ellipse(x, y, s, s * rr(.5, .9), rr(0, TAU), 0, TAU); g.fill();
+      const k = 7 + Math.floor(rnd() * 10);
       for (let i = 0; i < k; i++) {
-        const an = rr(0, TAU), d = rr(s * .5, s * 1.9), r2 = rr(.8, s * .28);
+        const an = rr(0, TAU), d = rr(s * .5, s * 2.2), r2 = rr(.9, s * .3);
         g.beginPath(); g.ellipse(x + Math.cos(an) * d, y + Math.sin(an) * d, r2, r2 * rr(.5, 1), an, 0, TAU); g.fill();
-      }
-      for (let i = 0; i < 2; i++) {
-        const an = rr(0, TAU);
-        g.beginPath(); g.ellipse(x + Math.cos(an) * s * 1.1, y + Math.sin(an) * s * 1.1, s * .8, 1.2, an, 0, TAU); g.fill();
       }
       g.globalAlpha = 1;
     };
-    const bloods = ['#5a0d12', '#7a151a', '#4a0a10', '#8a1a1e'];
-    for (let i = 0; i < 26; i++) {
-      const y = rr(120, h - 40);
-      splat(rr(20, w - 20), y, rr(5, 18), rr(.55, .9), bloods[Math.floor(rnd() * bloods.length)]);
+    const bloods = ['#4a090e', '#6d1015', '#3d070b', '#7a151b', '#2c5820', '#1f3f18'];
+    for (let i = 0; i < 38; i++) {
+      splat(rr(30, w - 30), rr(130, h - 50), rr(7, 24), rr(.55, .9), bloods[Math.floor(rnd() * bloods.length)]);
     }
-    for (let i = 0; i < 4; i++) splat(rr(w * .2, w * .8), rr(h * .45, h * .85), rr(20, 30), .8, '#5a0d12');
 
-    /* ---- spent brass ---- */
-    for (let i = 0; i < 70; i++) {
-      const x = rr(10, w - 10), y = rr(140, h - 20);
+    /* ---- Spent Shell Casings littering the map floor ---- */
+    for (let i = 0; i < 110; i++) {
+      const x = rr(15, w - 15), y = rr(150, h - 30);
       g.save(); g.translate(x, y); g.rotate(rr(0, TAU));
-      g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(-2.6, -0.4, 5.2, 2.2);
-      g.fillStyle = '#c9a24a'; g.fillRect(-2.6, -1, 5.2, 2);
-      g.fillStyle = '#f1dc8c'; g.fillRect(-2.6, -1, 5.2, 0.7);
+      g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(-3, -0.5, 6, 2.5);
+      g.fillStyle = '#caa346'; g.fillRect(-3, -1.2, 6, 2.2);
+      g.fillStyle = '#ffef99'; g.fillRect(-3, -1.2, 6, 0.8);
       g.restore();
     }
 
-    /* ---- debris ---- */
-    for (let i = 0; i < 5; i++) {
-      const x = rr(30, w - 30), y = rr(150, h - 60), L = rr(24, 46);
-      g.save(); g.translate(x, y); g.rotate(rr(0, TAU));
-      g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(-L / 2 + 1, -2, L, 7);
-      g.fillStyle = '#4d565c'; g.fillRect(-L / 2, -3, L, 6);
-      g.fillStyle = '#6a747a'; g.fillRect(-L / 2, -3, L, 1.5);
-      g.fillStyle = '#2a3136'; g.fillRect(-L / 2, -3, 3, 6); g.fillRect(L / 2 - 3, -3, 3, 6);
-      g.restore();
-    }
-    for (let i = 0; i < 14; i++) {
-      const x = rr(8, w - 8), y = rr(120, h - 8);
-      g.fillStyle = '#3a444b'; g.beginPath(); g.arc(x, y, 2.2, 0, TAU); g.fill();
-      g.fillStyle = 'rgba(0,0,0,.6)'; g.beginPath(); g.arc(x + .5, y + .5, 1, 0, TAU); g.fill();
-    }
-    // rusty barrels tucked in the margins
-    const barrels = [[rr(22, 60), rr(h * .35, h * .55)], [w - rr(22, 60), rr(h * .3, h * .5)], [w - rr(24, 70), rr(h * .68, h * .8)]];
-    for (const [x, y] of barrels) {
-      g.fillStyle = 'rgba(0,0,0,.5)'; g.beginPath(); g.ellipse(x + 3, y + 4, 14, 12, 0, 0, TAU); g.fill();
-      g.fillStyle = '#5a3a24'; g.beginPath(); g.arc(x, y, 13, 0, TAU); g.fill();
-      g.fillStyle = '#7a4d2c'; g.beginPath(); g.arc(x, y, 10, 0, TAU); g.fill();
-      g.strokeStyle = '#3a2416'; g.lineWidth = 1.5; g.beginPath(); g.arc(x, y, 11.5, 0, TAU); g.stroke();
-      g.fillStyle = '#9dff4f'; g.globalAlpha = .55; g.beginPath(); g.arc(x - 3, y + 2, 4, 0, TAU); g.fill(); g.globalAlpha = 1;
-    }
-    // a few skulls
-    for (let i = 0; i < 5; i++) {
-      const x = rr(30, w - 30), y = rr(160, h - 170);
-      g.save(); g.translate(x, y); g.rotate(rr(0, TAU)); g.globalAlpha = rr(.3, .5);
-      g.fillStyle = '#c8d2b8';
-      g.beginPath(); g.arc(0, 0, 4.5, 0, TAU); g.fill();
-      g.fillRect(-2.5, 3, 5, 3);
-      g.fillStyle = '#0b0e11';
-      g.beginPath(); g.arc(-1.7, -0.5, 1.2, 0, TAU); g.arc(1.7, -0.5, 1.2, 0, TAU); g.fill();
-      g.restore();
-    }
-
-    // edge vignette
-    const vg = g.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.42, w / 2, h / 2, Math.max(w, h) * 0.78);
-    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.65)');
+    // Heavy tactical vignette around arena edges
+    const vg = g.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.45, w / 2, h / 2, Math.max(w, h) * 0.78);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(1, 'rgba(0,0,0,.75)');
     g.fillStyle = vg; g.fillRect(0, 0, w, h);
 
     this.ground = off;
@@ -712,8 +742,9 @@ export class Game {
     this.lair.r = cfg.r;
     this.lair.maxHp = cfg.lairHp; this.lair.hp = cfg.lairHp;
     this.lair.alive = true; this.lair.deadT = 0;
-    this.lair.spawnT = 1.1; this.lair.rushT = cfg.rush + 2.5;
+    this.lair.spawnT = 1.2; this.lair.rushT = cfg.rush + 3.0;
     this.lair.telegraph = 0; this.lair.burst = 0; this.lair.hitFlash = 0;
+    this.lair.spawnedCount = 0;
     this.lair.bumps = [];
     for (let i = 0; i < 7; i++) {
       const a = rand(0, TAU), rr = rand(cfg.r * 0.35, cfg.r * 0.95);
@@ -748,7 +779,7 @@ export class Game {
       type: 'banner',
       title: first ? 'LEVEL 1' : `LEVEL ${level + 1}`,
       sub: LEVELS[level].name,
-      tone: level >= 4 ? 'red' : level >= 2 ? 'amber' : 'acid',
+      tone: level >= 6 ? 'red' : level >= 3 ? 'amber' : 'acid',
     });
     this.emitHud();
   }
@@ -756,6 +787,9 @@ export class Game {
   continueAfterShop() {
     if (this.level >= LEVELS.length - 1) return;
     this.base.hp = Math.min(this.base.maxHp, this.base.hp + this.base.maxHp * 0.25);
+    for (const t of this.turrets) {
+      t.hp = Math.min(t.maxHp, t.hp + t.maxHp * 0.35);
+    }
     this.startLevel(this.level + 1);
   }
 
@@ -842,6 +876,9 @@ export class Game {
       case 'repair':
         this.upgrades.repair++;
         this.base.hp = Math.min(this.base.maxHp, this.base.hp + this.base.maxHp * 0.35);
+        for (const t of this.turrets) {
+          t.hp = Math.min(t.maxHp, t.hp + t.maxHp * 0.35);
+        }
         this.burstSpark(this.base.x, this.base.y - 20, 14, '110,230,255', true);
         sfx.repair();
         break;
@@ -883,26 +920,77 @@ export class Game {
 
   private syncTurrets(reset: boolean) {
     const n = this.upgrades.turret;
+    // Turret positions flanking and protecting the base perimeter
     const want = [
-      { ox: -66 }, { ox: 66 },
+      { id: 1, ox: -68, oy: 6 },
+      { id: 2, ox: 68, oy: 6 },
+      { id: 3, ox: -128, oy: 18 },
+      { id: 4, ox: 128, oy: 18 },
     ].slice(0, n);
-    if (reset || this.turrets.length !== n) {
-      this.turrets = want.map((w) => {
-        const old = this.turrets.find((t) => Math.abs(t.ox - w.ox) < 2);
-        return old ?? {
-          ox: w.ox, x: this.base.x + w.ox, y: this.base.y + 6, ang: -Math.PI / 2, cd: 0,
-          recoil: 0, heat: 0, build: reset ? 1 : 0,
-        };
-      });
+
+    if (reset) {
+      this.turrets = want.map((w) => ({
+        id: w.id,
+        ox: w.ox,
+        x: this.base.x + w.ox,
+        y: this.base.y + (w.oy ?? 6),
+        r: 16,
+        hp: 120,
+        maxHp: 120,
+        flash: 0,
+        dead: false,
+        ang: -Math.PI / 2,
+        cd: 0,
+        recoil: 0,
+        heat: 0,
+        build: 1,
+      }));
+    } else {
+      // Reconcile existing turrets and append newly purchased ones
+      const nextTurrets: Turret[] = [];
+      for (let i = 0; i < want.length; i++) {
+        const w = want[i];
+        const existing = this.turrets.find((t) => t.id === w.id);
+        if (existing) {
+          existing.ox = w.ox;
+          existing.x = this.base.x + w.ox;
+          existing.y = this.base.y + (w.oy ?? 6);
+          nextTurrets.push(existing);
+        } else {
+          nextTurrets.push({
+            id: w.id,
+            ox: w.ox,
+            x: this.base.x + w.ox,
+            y: this.base.y + (w.oy ?? 6),
+            r: 16,
+            hp: 120,
+            maxHp: 120,
+            flash: 0,
+            dead: false,
+            ang: -Math.PI / 2,
+            cd: 0,
+            recoil: 0,
+            heat: 0,
+            build: 0,
+          });
+        }
+      }
+      this.turrets = nextTurrets;
     }
-    for (const t of this.turrets) { t.x = this.base.x + t.ox; t.y = this.base.y + 6; }
+
+    for (let i = 0; i < this.turrets.length; i++) {
+      const t = this.turrets[i];
+      const w = want[i] ?? { ox: t.ox, oy: 6 };
+      t.x = this.base.x + t.ox;
+      t.y = this.base.y + (w.oy ?? 6);
+    }
   }
 
   private dmgMul() { return 1 + 0.3 * this.upgrades.damage; }
   private speedMul() { return 1 + 0.09 * this.upgrades.speed; }
   /** sprite height as a multiple of the collision radius, shared by draw + hit tests */
   private static zScale(type: ZType) {
-    return type === 'runner' ? 4.4 : type === 'brute' ? 5.1 : 4.7;
+    return type === 'runner' ? 4.4 : type === 'brute' ? 5.1 : type === 'mutant' ? 4.9 : 4.7;
   }
 
   /** hero sprite placement + hand/shoulder anchors, shared by aim, fire and render */
@@ -982,13 +1070,16 @@ export class Game {
       x = this.lair.x + Math.cos(a) * this.lair.r * rand(0.7, 1.0);
       y = this.lair.y + Math.abs(Math.sin(a)) * this.lair.r * 0.72 + this.lair.r * 0.2;
     }
+    const finalHp = d.hp * this.cfg.hpMul;
     this.zombies.push({
       x, y, kx: 0, ky: 0, r: d.r,
-      hp: d.hp * this.cfg.hpMul, maxHp: d.hp * this.cfg.hpMul,
-      speed: d.speed * this.cfg.spdMul, dmg: d.dmg * this.cfg.dmgMul,
+      hp: finalHp, maxHp: finalHp,
+      speed: d.speed * this.cfg.spdMul,
+      dmg: d.dmg * this.cfg.dmgMul,
       type: t, face: Math.PI / 2, atkCd: 0, hitFlash: 0,
       phase: rand(0, TAU), wob: rand(0.8, 1.4), score: d.score,
-      coinMin: d.coin[0], coinMax: d.coin[1], tx: x, ty: y + 100, retarget: 0,
+      coinMin: d.coin[0], coinMax: d.coin[1],
+      tx: x, ty: y + 100, retarget: 0,
       anim: 'walk', animT: rand(0, 4),
       spawnT: atLair ? 0 : 1, attackT: -1, struck: false, atkTarget: 'base',
     });
@@ -1192,24 +1283,52 @@ export class Game {
   }
 
   private turretFire(t: Turret, z: Zombie) {
-    const hy = t.y - 22;  // head height on the tower
-    const a = Math.atan2(z.y - hy, z.x - t.x) + rand(-0.03, 0.03);
-    t.ang = a; t.cd = 0.36; t.recoil = 1; t.heat = Math.min(1, t.heat + 0.12);
-    const mx = t.x + Math.cos(a) * 18, my = hy + Math.sin(a) * 18;
+    const hy = t.y - 20;  // gun mount height on the tripod
+    const a = Math.atan2(z.y - hy, z.x - t.x) + rand(-0.025, 0.025);
+    t.ang = a;
+    t.cd = 0.16; // rapid machine gun fire rate (~6.25 rps)
+    t.recoil = 1;
+    t.heat = Math.min(1, t.heat + 0.09);
+
+    // Muzzle position at the tip of the heavy machine gun barrel
+    const barrelLen = 38;
+    const mx = t.x + Math.cos(a) * barrelLen, my = hy + Math.sin(a) * barrelLen;
     this.bullets.push({
-      x: mx, y: my, px: mx, py: my, vx: Math.cos(a) * 640, vy: Math.sin(a) * 640,
-      dmg: 9, life: 0.8, color: '#7dffe0', turret: true, pierce: 0, hits: [],
+      x: mx, y: my, px: mx, py: my,
+      vx: Math.cos(a) * 820, vy: Math.sin(a) * 820,
+      dmg: 12, life: 0.95, color: '#ffd358', turret: true, pierce: 0, hits: [],
     });
-    for (let i = 0; i < 2; i++) this.addParticle({
-      x: mx, y: my,
-      vx: Math.cos(a) * rand(60, 140) + rand(-30, 30), vy: Math.sin(a) * rand(60, 140) + rand(-30, 30),
-      life: rand(.06, .14), max: .14, size: rand(2, 3.5), color: 'rgba(140,255,230,1)', grav: 0, drag: 6, glow: true, grow: -6,
-    });
-    // brass off the side of the mount
-    if (this.casings.length < 70) this.casings.push({
-      x: t.x, y: hy, vx: rand(-50, 50), vy: rand(-90, -40), rot: rand(0, TAU), vr: rand(-12, 12),
-      ground: t.y + rand(6, 12), life: rand(1.5, 2.5), rest: false, kind: 'brass',
-    });
+
+    // Muzzle flash flame / smoke puffs
+    for (let i = 0; i < 3; i++) {
+      this.addParticle({
+        x: mx, y: my,
+        vx: Math.cos(a) * rand(70, 180) + rand(-35, 35),
+        vy: Math.sin(a) * rand(70, 180) + rand(-35, 35),
+        life: rand(.06, .16), max: .16, size: rand(2.5, 4.5),
+        color: Math.random() < 0.6 ? 'rgba(255,215,90,1)' : 'rgba(255,140,40,1)',
+        grav: 0, drag: 6, glow: true, grow: -5,
+      });
+    }
+
+    // Heavy machine gun brass casings ejected from side port
+    const sideAngle = a + Math.PI / 2;
+    if (this.casings.length < 80) {
+      this.casings.push({
+        x: t.x + Math.cos(a) * 4 + Math.cos(sideAngle) * 6,
+        y: hy + Math.sin(a) * 4 + Math.sin(sideAngle) * 6,
+        vx: Math.cos(sideAngle) * rand(50, 110) + rand(-20, 20),
+        vy: rand(-110, -50),
+        rot: rand(0, TAU),
+        vr: rand(-14, 14),
+        ground: t.y + rand(6, 12),
+        life: rand(2.0, 3.2),
+        rest: false,
+        kind: 'brass',
+      });
+    }
+
+    // Gunfire sound effect
     sfx.turret();
   }
 
@@ -1239,9 +1358,25 @@ export class Game {
     this.stats.score += pts;
     this.stats.kills++;
     const big = z.type === 'brute';
-    const mid = z.type === 'tank' || big;
+    const mutant = z.type === 'mutant';
+    const mid = z.type === 'tank' || mutant || big;
     const cy = z.y - z.r * 1.3;
-    this.gore(z.x, cy, big ? 26 : mid ? 18 : 12, big ? '120,70,150' : '90,180,70', big ? 1.5 : 1);
+    this.gore(z.x, cy, big ? 26 : mutant ? 22 : mid ? 18 : 12, big ? '120,70,150' : mutant ? '50,255,140' : '90,180,70', big ? 1.5 : mutant ? 1.3 : 1);
+    
+    if (mutant) {
+      // Mutated zombie acid burst upon death
+      this.rings.push({ x: z.x, y: cy, r: 6, vr: 340, life: .36, max: .36, color: '60,255,140', w: 4 });
+      for (let i = 0; i < 14; i++) {
+        const a = rand(0, TAU), sp = rand(70, 240);
+        this.addParticle({
+          x: z.x, y: cy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 50,
+          life: rand(.4, .8), max: .8, size: rand(3, 6.5),
+          color: 'rgba(70,255,130,0.95)', grav: 360, drag: 1.4, glow: true, grow: 1,
+        });
+      }
+      this.shake = Math.min(14, this.shake + 2.8);
+      sfx.hiveCrack();
+    }
     if (overkill && !big) {
       // gibbed: body bursts instead of falling
       this.gore(z.x, cy, 16, '150,40,50', 1.4);
@@ -1318,6 +1453,52 @@ export class Game {
     sfx.baseHit();
     if (b.hp / b.maxHp < 0.35 && b.alarm <= 0) { b.alarm = 2.4; sfx.alarm(); }
     if (b.hp <= 0) { b.hp = 0; this.beginOver('base'); }
+  }
+
+  private destroyTurret(t: Turret) {
+    if (t.dead) return;
+    t.dead = true;
+    t.hp = 0;
+    this.explosion(t.x, t.y, false);
+    for (let i = 0; i < 12; i++) {
+      this.addParticle({
+        x: t.x + rand(-8, 8),
+        y: t.y - rand(0, 20),
+        vx: rand(-120, 120),
+        vy: rand(-180, -40),
+        life: rand(0.4, 0.8),
+        max: 0.8,
+        size: rand(2.5, 6),
+        color: Math.random() < 0.5 ? '#4e5a63' : '#ff9a40',
+        grav: 420,
+        drag: 1.5,
+        glow: true,
+        grow: -2,
+      });
+    }
+    this.addText(t.x, t.y - 28, 'TURRET DESTROYED', '#ff5555', 14);
+    this.shake = Math.min(18, this.shake + 6);
+    this.upgrades.turret = Math.max(0, this.upgrades.turret - 1);
+    this.turrets = this.turrets.filter((tur) => tur !== t);
+    this.emitHud();
+  }
+
+  private hurtTurret(t: Turret, amount: number, x: number, y: number) {
+    if (this.mode !== 'playing' || t.dead) return;
+    t.hp -= amount;
+    t.flash = 0.35;
+    this.burstSpark(x, y, 7, '220,180,120', true);
+    for (let i = 0; i < 3; i++) {
+      this.addParticle({
+        x, y, vx: rand(-25, 25), vy: rand(-70, -20), life: rand(.3, .7), max: .7,
+        size: rand(3, 6), color: 'rgba(80,80,75,.8)', grav: -20, drag: 1, glow: false, grow: 5,
+      });
+    }
+    this.shake = Math.min(14, this.shake + 2.4);
+    sfx.baseHit();
+    if (t.hp <= 0) {
+      this.destroyTurret(t);
+    }
   }
 
   private destroyLair() {
@@ -1504,25 +1685,63 @@ export class Game {
     if (!L.alive) return;
     const ratio = L.hp / L.maxHp;
     L.spawnT -= dt;
-    if (L.spawnT <= 0 && this.zombies.filter((z) => !z.ambient && !z.dead).length < this.cfg.cap) {
+
+    // Check finite zombie quota per sector to prevent endless infinite spawns
+    const hasRemainingQuota = L.spawnedCount < this.cfg.totalZombies;
+    const activeZombies = this.zombies.filter((z) => !z.ambient && !z.dead);
+
+    if (L.spawnT <= 0 && activeZombies.length < this.cfg.cap && hasRemainingQuota) {
       this.spawnZombie();
-      L.spawnT = this.cfg.interval * (0.65 + 0.45 * ratio) * rand(0.85, 1.2);
+      L.spawnedCount++;
+      L.spawnT = this.cfg.interval * (0.8 + 0.3 * ratio) * rand(0.9, 1.25);
     }
     L.rushT -= dt;
-    if (L.rushT <= 0 && L.telegraph <= 0) {
+    if (L.rushT <= 0 && L.telegraph <= 0 && hasRemainingQuota) {
       L.telegraph = 1;
-      L.burst = 3 + this.level + randInt(0, 2);
-      sfx.rush();
+      const left = this.cfg.totalZombies - L.spawnedCount;
+      L.burst = Math.min(left, 2 + Math.floor(this.level * 0.6) + randInt(0, 1));
+      if (L.burst > 0) sfx.rush();
       L.rushT = this.cfg.rush;
     }
     if (L.telegraph > 0) {
       L.telegraph -= dt / 0.95;
       if (L.telegraph <= 0 && L.burst > 0) {
         const n = L.burst;
-        for (let i = 0; i < n; i++) this.spawnZombie();
+        for (let i = 0; i < n; i++) {
+          this.spawnZombie();
+          L.spawnedCount++;
+        }
         this.burstSpark(L.x, L.y + L.r * 0.4, 16, '157,255,79', true);
         this.shake = Math.min(10, this.shake + 3);
         L.burst = 0;
+      }
+    }
+
+    // Auto-defeat lair if the entire zombie horde quota has been eliminated
+    if (!hasRemainingQuota && activeZombies.length === 0 && L.alive) {
+      this.destroyLair();
+      return;
+    }
+    // Zombie Lair HP regeneration every 6 seconds
+    L.regenT -= dt;
+    if (L.regenT <= 0) {
+      L.regenT = 6.0;
+      if (L.hp < L.maxHp) {
+        // Flat modest heal so the player's weapon DPS isn't negated on early sectors
+        const healAmt = Math.min(L.maxHp - L.hp, Math.round(L.maxHp * 0.04 + 6));
+        L.hp += healAmt;
+        this.addText(L.x, L.y - L.r - 28, `+${healAmt} REGEN`, '#5ce85a', 14);
+        // Bioluminescent green pulse and spores
+        this.burstSpark(L.x, L.y, 14, '90,255,120', true);
+        for (let i = 0; i < 8; i++) {
+          this.addParticle({
+            x: L.x + rand(-L.r * 0.7, L.r * 0.7),
+            y: L.y + rand(-L.r * 0.5, L.r * 0.5),
+            vx: rand(-30, 30), vy: rand(-80, -20),
+            life: rand(0.5, 1.1), max: 1.1, size: rand(2.5, 5),
+            color: 'rgba(92,232,90,.9)', grav: -20, drag: 1.2, glow: true, grow: 2,
+          });
+        }
       }
     }
     L.hitFlash = Math.max(0, L.hitFlash - dt * 4);
@@ -1539,8 +1758,10 @@ export class Game {
 
   private updateTurrets(dt: number) {
     for (const t of this.turrets) {
+      if (t.dead) continue;
       t.recoil = Math.max(0, t.recoil - dt * 8);
       t.heat = Math.max(0, t.heat - dt * 0.4);
+      t.flash = Math.max(0, t.flash - dt * 2.5);
       if (t.build < 1) { t.build = Math.min(1, t.build + dt / 0.6); continue; }
       let best: Zombie | null = null; let bd = 300 * 300;
       for (const z of this.zombies) {
@@ -1550,7 +1771,7 @@ export class Game {
       }
       t.cd -= dt;
       if (best) {
-        const want = Math.atan2(best.y - (t.y - 22), best.x - t.x);
+        const want = Math.atan2(best.y - (t.y - 20), best.x - t.x);
         t.ang = angLerp(t.ang, want, Math.min(1, dt * 8));
         if (t.cd <= 0 && Math.abs(angLerp(t.ang, want, 1) - t.ang) < 0.25) this.turretFire(t, best);
       } else {
@@ -1685,6 +1906,14 @@ export class Game {
               this.hurtPlayer(z.dmg * 0.5, z.x, z.y);
             }
             z.kx -= Math.cos(z.face) * 50; z.ky -= Math.sin(z.face) * 50;
+          } else if (z.atkTarget === 'turret') {
+            const tgtTurret = this.turrets.find((t) => t.id === z.targetTurretId && !t.dead);
+            if (tgtTurret && dist2(z.x, z.y, tgtTurret.x, tgtTurret.y) < (z.r + tgtTurret.r + 18) ** 2) {
+              const hx = z.x + Math.cos(z.face) * (z.r + 6);
+              const hy = z.y + Math.sin(z.face) * (z.r + 6);
+              this.hurtTurret(tgtTurret, z.dmg * 1.25, hx, hy);
+              z.kx -= Math.cos(z.face) * 40; z.ky -= Math.sin(z.face) * 40;
+            }
           } else if (dist2(z.x, z.y, b.x, b.y) < (z.r + b.r + 18) ** 2) {
             const hx = z.x + Math.cos(z.face) * (z.r + 6);
             const hy = z.y + Math.sin(z.face) * (z.r + 6);
@@ -1713,12 +1942,32 @@ export class Game {
         continue;
       }
 
-      // pick target: nearby player aggro, otherwise the bunker
+      // pick target: Gun machine towers first if nearby/active, then nearby player, otherwise bunker
       z.retarget -= dt;
-      const dPlayer = dist2(z.x, z.y, p.x, p.y);
       let tx = b.x, ty = b.y;
-      if (dPlayer < 150 * 150) { tx = p.x; ty = p.y; }
-      else if (z.retarget <= 0) z.retarget = 0.4;
+      let bestTurret: Turret | null = null;
+      let bestTurretDist2 = 360 * 360; // large aggro search radius for turrets
+
+      for (const t of this.turrets) {
+        if (t.dead) continue;
+        const td = dist2(z.x, z.y, t.x, t.y);
+        if (td < bestTurretDist2) {
+          bestTurretDist2 = td;
+          bestTurret = t;
+        }
+      }
+
+      const dPlayer = dist2(z.x, z.y, p.x, p.y);
+      if (bestTurret) {
+        tx = bestTurret.x;
+        ty = bestTurret.y;
+      } else if (dPlayer < 150 * 150) {
+        tx = p.x;
+        ty = p.y;
+      } else if (z.retarget <= 0) {
+        z.retarget = 0.4;
+      }
+
       let dx = tx - z.x, dy = ty - z.y;
       let dl = Math.hypot(dx, dy) || 1;
       const wobble = Math.sin(z.phase) * 0.22;
@@ -1742,19 +1991,50 @@ export class Game {
       z.y += (uy / ul) * z.speed * dt;
       z.x = clamp(z.x, 16, this.world.w - 16);
       z.face = angLerp(z.face, Math.atan2(dy, dx), Math.min(1, dt * 6));
-      if (z.type === 'runner' && Math.random() < dt * 5) this.addParticle({
-        x: z.x + rand(-4, 4), y: z.y + z.r * 0.5, vx: -(ux / ul) * rand(10, 30), vy: rand(-18, -6),
-        life: rand(.25, .45), max: .45, size: rand(2, 3.5), color: 'rgba(150,140,120,.3)', grav: -10, drag: 2, glow: false, grow: 7,
-      });
+      // Dynamic zombie trail effects (slime, toxic spores, ash, and foot dust)
+      if (z.type === 'runner' && Math.random() < dt * 6) {
+        this.addParticle({
+          x: z.x + rand(-4, 4), y: z.y + z.r * 0.5, vx: -(ux / ul) * rand(10, 30), vy: rand(-18, -6),
+          life: rand(.25, .45), max: .45, size: rand(2, 3.5), color: 'rgba(150,140,120,.3)', grav: -10, drag: 2, glow: false, grow: 7,
+        });
+      } else if (z.type === 'mutant' && Math.random() < dt * 10) {
+        // Glowing bio-spores and acid drips
+        this.addParticle({
+          x: z.x + rand(-6, 6), y: z.y + rand(-z.r, z.r * 0.4),
+          vx: rand(-15, 15), vy: rand(-25, 10),
+          life: rand(.35, .7), max: .7, size: rand(2.2, 4.2),
+          color: Math.random() < 0.5 ? 'rgba(56,239,125,0.85)' : 'rgba(30,190,90,0.7)',
+          grav: -15, drag: 1.5, glow: true, grow: 2,
+        });
+      } else if (z.type === 'brute' && Math.random() < dt * 8) {
+        // Purple demonic miasma
+        this.addParticle({
+          x: z.x + rand(-8, 8), y: z.y + rand(-z.r * 0.8, 0),
+          vx: rand(-20, 20), vy: rand(-35, -5),
+          life: rand(.4, .8), max: .8, size: rand(3, 6),
+          color: 'rgba(180,60,220,0.65)', grav: -25, drag: 1.8, glow: true, grow: 3,
+        });
+      }
 
-      // in range → commit to a telegraphed swipe
+      // in range → commit to a telegraphed swipe (gun machine towers prioritized first)
       if (z.atkCd <= 0) {
-        if (dPlayer < (z.r + p.r + 6) ** 2) {
-          z.attackT = 0; z.struck = false; z.atkTarget = 'player';
+        if (bestTurret && bestTurretDist2 < (z.r + bestTurret.r + 8) ** 2) {
+          z.attackT = 0;
+          z.struck = false;
+          z.atkTarget = 'turret';
+          z.targetTurretId = bestTurret.id;
+          z.face = Math.atan2(bestTurret.y - z.y, bestTurret.x - z.x);
+          sfx.zombieAttack();
+        } else if (dPlayer < (z.r + p.r + 6) ** 2) {
+          z.attackT = 0;
+          z.struck = false;
+          z.atkTarget = 'player';
           z.face = Math.atan2(p.y - z.y, p.x - z.x);
           sfx.zombieAttack();
         } else if (dist2(z.x, z.y, b.x, b.y) < (z.r + b.r) ** 2) {
-          z.attackT = 0; z.struck = false; z.atkTarget = 'base';
+          z.attackT = 0;
+          z.struck = false;
+          z.atkTarget = 'base';
           z.face = Math.atan2(b.y - z.y, b.x - z.x);
           sfx.zombieAttack();
         }
@@ -2344,27 +2624,26 @@ export class Game {
     c.save();
     c.translate(b.x, b.y);
     // shadow
-    c.fillStyle = 'rgba(0,0,0,.45)';
-    c.beginPath(); c.ellipse(0, 20, 62, 20, 0, 0, TAU); c.fill();
+    c.fillStyle = 'rgba(0,0,0,.55)';
+    c.beginPath(); c.ellipse(0, 24, 78, 26, 0, 0, TAU); c.fill();
 
-    // sandbag arc facing the hive
+    // Reinforced perimeter revetment walls and sandbags facing the horde
     for (let row = 0; row < 3; row++) {
-      const rad = 46 + row * 9, count = 10 + row;
+      const rad = 56 + row * 11, count = 12 + row * 2;
       for (let i = 0; i < count; i++) {
-        const a = Math.PI * 1.08 + (Math.PI * 0.84) * ((i + (row % 2 ? 0.5 : 0)) / count);
+        const a = Math.PI * 1.05 + (Math.PI * 0.90) * ((i + (row % 2 ? 0.5 : 0)) / count);
         const x = Math.cos(a) * rad, y = Math.sin(a) * rad * 0.9;
         c.save();
         c.translate(x, y); c.rotate(a);
-        c.fillStyle = 'rgba(0,0,0,.35)';
-        c.beginPath(); c.ellipse(1, 2, 8, 6, 0, 0, TAU); c.fill();
-        c.fillStyle = row === 1 ? '#4f5a2c' : '#5d6b3a';
-        c.beginPath(); c.ellipse(0, 0, 8, 6, 0, 0, TAU); c.fill();
-        c.fillStyle = 'rgba(160,180,110,.35)';
-        c.beginPath(); c.ellipse(-1.5, -1.8, 5, 2.4, 0, 0, TAU); c.fill();
-        c.strokeStyle = 'rgba(0,0,0,.4)'; c.lineWidth = 1; c.beginPath(); c.ellipse(0, 0, 8, 6, 0, 0, TAU); c.stroke();
-        // stitching seam
-        c.strokeStyle = 'rgba(0,0,0,.3)'; c.setLineDash([1.5, 1.5]);
-        c.beginPath(); c.moveTo(-6, 0); c.lineTo(6, 0); c.stroke();
+        c.fillStyle = 'rgba(0,0,0,.4)';
+        c.beginPath(); c.ellipse(1.5, 2.5, 9, 6.5, 0, 0, TAU); c.fill();
+        c.fillStyle = row === 1 ? '#424a26' : row === 2 ? '#505a2e' : '#5f6d38';
+        c.beginPath(); c.ellipse(0, 0, 9, 6.5, 0, 0, TAU); c.fill();
+        c.fillStyle = 'rgba(175,195,120,.35)';
+        c.beginPath(); c.ellipse(-2, -2, 5.5, 2.6, 0, 0, TAU); c.fill();
+        c.strokeStyle = '#202613'; c.lineWidth = 1.1; c.beginPath(); c.ellipse(0, 0, 9, 6.5, 0, 0, TAU); c.stroke();
+        c.strokeStyle = 'rgba(0,0,0,.35)'; c.setLineDash([2, 2]);
+        c.beginPath(); c.moveTo(-7, 0); c.lineTo(7, 0); c.stroke();
         c.setLineDash([]);
         c.restore();
       }
@@ -2374,75 +2653,112 @@ export class Game {
     const build = b.buildT > 0 ? 1 + Math.sin((1 - b.buildT / 0.6) * Math.PI) * 0.05 : 1;
     c.scale(build, build);
 
-    // ---- bunker body ----
+    // ---- bunker fortress body ----
     const flash = b.flash;
     const ratio = b.hp / b.maxHp;
     const plating = this.upgrades.walls;
-    const W = 78 + plating * 3, H = 58 + plating * 2;
-    // concrete base slab
-    c.fillStyle = '#2c3438';
-    this.rr(-W / 2 - 6, -H / 2 - 2, W + 12, H + 10, 8); c.fill();
-    c.fillStyle = 'rgba(0,0,0,.35)';
-    this.rr(-W / 2 - 6, H / 2 + 2, W + 12, 6, 3); c.fill();
-    // hull
+    const W = 96 + plating * 4, H = 68 + plating * 3;
+
+    // Heavy reinforced concrete apron foundation with chamfered blast corners
+    c.fillStyle = '#22292d';
+    this.rr(-W / 2 - 10, -H / 2 - 4, W + 20, H + 16, 12); c.fill();
+    c.fillStyle = 'rgba(0,0,0,.45)';
+    this.rr(-W / 2 - 10, H / 2 + 4, W + 20, 8, 4); c.fill();
+
+    // High-tensile steel armor hull
     const hull = c.createLinearGradient(0, -H / 2, 0, H / 2);
-    hull.addColorStop(0, flash > 0 ? '#9aa8b0' : '#5e6e78');
-    hull.addColorStop(1, flash > 0 ? '#6a7880' : '#3e4b54');
+    hull.addColorStop(0, flash > 0 ? '#b2c0c8' : '#4d5d67');
+    hull.addColorStop(0.3, flash > 0 ? '#8e9da5' : '#39464f');
+    hull.addColorStop(1, flash > 0 ? '#6d7b82' : '#273138');
     c.fillStyle = hull;
     this.rr(-W / 2, -H / 2, W, H, 10); c.fill();
-    c.strokeStyle = '#1f272c'; c.lineWidth = 3; c.stroke();
-    // panel seams
-    c.strokeStyle = 'rgba(0,0,0,.3)'; c.lineWidth = 1.5;
-    for (let i = -1; i <= 1; i++) { c.beginPath(); c.moveTo(i * 25, -H / 2 + 4); c.lineTo(i * 25, H / 2 - 4); c.stroke(); }
-    c.beginPath(); c.moveTo(-W / 2 + 3, 2); c.lineTo(W / 2 - 3, 2); c.stroke();
-    // bolted armor plates (one per plating level)
+    c.strokeStyle = '#12181c'; c.lineWidth = 3.5; c.stroke();
+
+    // Structural steel support columns and bevel panel bevels
+    c.strokeStyle = 'rgba(0,0,0,.4)'; c.lineWidth = 2;
+    for (let i = -2; i <= 2; i++) {
+      if (i === 0) continue;
+      c.beginPath(); c.moveTo(i * 22, -H / 2 + 4); c.lineTo(i * 22, H / 2 - 4); c.stroke();
+    }
+    c.beginPath(); c.moveTo(-W / 2 + 4, 0); c.lineTo(W / 2 - 4, 0); c.stroke();
+
+    // Bolted heavy ballistic composite armor plates
     for (let i = 0; i < plating; i++) {
-      const px = -W / 2 + 8 + (i % 3) * 24, py = i < 3 ? -H / 2 + 14 : H / 2 - 24;
-      c.fillStyle = '#6f7f88'; this.rr(px, py, 20, 12, 2); c.fill();
-      c.strokeStyle = '#26303a'; c.lineWidth = 1.5; c.stroke();
-      c.fillStyle = '#c8d2d8';
-      for (const [rx, ry] of [[px + 3, py + 3], [px + 17, py + 3], [px + 3, py + 9], [px + 17, py + 9]]) {
-        c.beginPath(); c.arc(rx, ry, 1.3, 0, TAU); c.fill();
+      const px = -W / 2 + 10 + (i % 4) * 23, py = i < 4 ? -H / 2 + 16 : H / 2 - 26;
+      c.fillStyle = '#5c6d77'; this.rr(px, py, 21, 13, 2.5); c.fill();
+      c.strokeStyle = '#1c242b'; c.lineWidth = 1.6; c.stroke();
+      c.fillStyle = '#d5e1e8';
+      for (const [rx, ry] of [[px + 3, py + 3], [px + 18, py + 3], [px + 3, py + 10], [px + 18, py + 10]]) {
+        c.beginPath(); c.arc(rx, ry, 1.4, 0, TAU); c.fill();
       }
     }
-    // hazard stripes on the front lip
+
+    // High-contrast industrial yellow & black hazard chevron stripe bar
     c.save();
-    c.beginPath(); this.rr(-W / 2, -H / 2, W, 8, 6); c.clip();
-    for (let i = -5; i < 9; i++) {
-      c.fillStyle = i % 2 ? '#d9b341' : '#262a2e';
-      c.save(); c.translate(i * 12, -H / 2); c.rotate(-0.5); c.fillRect(0, 0, 7, 30); c.restore();
+    c.beginPath(); this.rr(-W / 2, -H / 2, W, 9, 6); c.clip();
+    for (let i = -7; i < 11; i++) {
+      c.fillStyle = i % 2 ? '#e5bc2c' : '#1c1f24';
+      c.save(); c.translate(i * 12, -H / 2); c.rotate(-0.5); c.fillRect(0, 0, 7, 34); c.restore();
     }
     c.restore();
-    // blast door with warning lamps
-    c.fillStyle = '#161d22';
-    this.rr(-11, -H / 2 - 2, 22, 20, 4); c.fill();
-    c.strokeStyle = '#3b4a54'; c.lineWidth = 2; c.stroke();
-    c.fillStyle = '#2b353c'; c.fillRect(-8, -H / 2 + 6, 16, 2); c.fillRect(-8, -H / 2 + 11, 16, 2);
+
+    // Central pressurized armored blast airlock door
+    c.fillStyle = '#101518';
+    this.rr(-14, -H / 2 - 2, 28, 24, 4); c.fill();
+    c.strokeStyle = '#2f3c44'; c.lineWidth = 2.2; c.stroke();
+    c.fillStyle = '#222b30';
+    c.fillRect(-10, -H / 2 + 6, 20, 2.5);
+    c.fillRect(-10, -H / 2 + 12, 20, 2.5);
+    c.fillRect(-10, -H / 2 + 18, 20, 2.5);
+
+    // Blast door locking wheel
+    c.strokeStyle = '#d5a133'; c.lineWidth = 1.5;
+    c.beginPath(); c.arc(0, -H / 2 + 12, 4, 0, TAU); c.stroke();
+
     const lampOn = b.alarm > 0 ? Math.sin(t * 22) > 0 : Math.sin(t * 4) > 0;
     c.fillStyle = lampOn ? '#ffb13d' : '#5a3a10';
-    c.fillRect(-16, -H / 2 + 2, 4, 4); c.fillRect(12, -H / 2 + 2, 4, 4);
-    // viewports glow
-    const vg = 0.55 + 0.2 * Math.sin(t * 2);
-    c.fillStyle = `rgba(86,227,255,${vg})`;
-    c.fillRect(-30, 10, 12, 8); c.fillRect(18, 10, 12, 8);
+    c.fillRect(-19, -H / 2 + 3, 4, 4); c.fillRect(15, -H / 2 + 3, 4, 4);
+
+    // Tactical fortified vision slits / energy embrasures with cyan glow
+    const vg = 0.65 + 0.25 * Math.sin(t * 2);
+    c.fillStyle = `rgba(56,220,255,${vg})`;
+    c.fillRect(-38, 12, 16, 7); c.fillRect(22, 12, 16, 7);
+    c.strokeStyle = '#152b35'; c.lineWidth = 1.2;
+    c.strokeRect(-38, 12, 16, 7); c.strokeRect(22, 12, 16, 7);
+
     c.save(); c.globalCompositeOperation = 'lighter';
-    c.fillStyle = `rgba(86,227,255,${vg * 0.25})`;
-    c.fillRect(-32, 8, 16, 12); c.fillRect(16, 8, 16, 12);
+    c.fillStyle = `rgba(56,220,255,${vg * 0.35})`;
+    c.fillRect(-41, 10, 22, 11); c.fillRect(19, 10, 22, 11);
     c.restore();
-    // vent with exhaust
-    c.fillStyle = '#1b2227'; this.rr(-6, 8, 12, 14, 2); c.fill();
-    c.strokeStyle = '#3b4a54'; c.lineWidth = 1;
-    for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(-4, 11 + i * 3); c.lineTo(4, 11 + i * 3); c.stroke(); }
-    // rooftop: antenna + beacon
-    c.strokeStyle = '#3b4a54'; c.lineWidth = 2;
-    c.beginPath(); c.moveTo(30, -H / 2 + 2); c.lineTo(30, -H / 2 - 22); c.stroke();
-    c.beginPath(); c.moveTo(26, -H / 2 - 14); c.lineTo(34, -H / 2 - 14); c.stroke();
+
+    // Reinforced ventilation louvers & heat exhausts
+    c.fillStyle = '#141a1e'; this.rr(-8, 10, 16, 16, 2); c.fill();
+    c.strokeStyle = '#323f47'; c.lineWidth = 1;
+    for (let i = 0; i < 4; i++) {
+      c.beginPath(); c.moveTo(-6, 13 + i * 3.5); c.lineTo(6, 13 + i * 3.5); c.stroke();
+    }
+
+    // Rooftop Communications array & rotating tactical radar dish
+    c.strokeStyle = '#323f47'; c.lineWidth = 2.4;
+    c.beginPath(); c.moveTo(36, -H / 2 + 2); c.lineTo(36, -H / 2 - 26); c.stroke();
+    c.beginPath(); c.moveTo(32, -H / 2 - 16); c.lineTo(40, -H / 2 - 16); c.stroke();
+
+    // Radar dish sweep
+    const radarAng = t * 3.5;
+    c.save();
+    c.translate(-34, -H / 2 - 8);
+    c.rotate(Math.sin(radarAng) * 0.45);
+    c.strokeStyle = '#4e5f6a'; c.lineWidth = 2;
+    c.beginPath(); c.arc(0, 0, 7, Math.PI * 0.8, Math.PI * 1.8); c.stroke();
+    c.beginPath(); c.moveTo(0, 0); c.lineTo(0, 6); c.stroke();
+    c.restore();
+
     const beacon = b.alarm > 0 ? Math.sin(t * 22) > 0 : Math.sin(t * 4) > 0;
-    c.fillStyle = beacon ? '#ff5555' : '#662222';
-    c.beginPath(); c.arc(30, -H / 2 - 24, 3, 0, TAU); c.fill();
+    c.fillStyle = beacon ? '#ff3b3b' : '#661a1a';
+    c.beginPath(); c.arc(36, -H / 2 - 28, 3.5, 0, TAU); c.fill();
     if (beacon) {
       c.save(); c.globalCompositeOperation = 'lighter';
-      c.fillStyle = 'rgba(255,60,60,.25)'; c.beginPath(); c.arc(30, -H / 2 - 24, 9, 0, TAU); c.fill();
+      c.fillStyle = 'rgba(255,50,50,.35)'; c.beginPath(); c.arc(36, -H / 2 - 28, 12, 0, TAU); c.fill();
       c.restore();
     }
     // alarm: rotating red wash
@@ -2588,52 +2904,229 @@ export class Game {
   private drawTurret(t: Turret) {
     const c = this.ctx;
     const rise = 1 - Math.pow(1 - t.build, 3);
-    const headY = -22;
+    const headY = -20;
     c.save();
     c.translate(t.x, t.y);
-    // shadow
-    c.fillStyle = 'rgba(0,0,0,.45)'; c.beginPath(); c.ellipse(0, 6, 15, 6, 0, 0, TAU); c.fill();
+
+    // Ground shadow under tripod
+    c.fillStyle = 'rgba(0,0,0,.5)';
+    c.beginPath();
+    c.ellipse(0, 5, 20, 8, 0, 0, TAU);
+    c.fill();
+
     c.save();
-    c.translate(0, (1 - rise) * 30);
-    if (rise < 1) { c.beginPath(); c.rect(-30, -60 - (1 - rise) * 30, 60, 66 + (1 - rise) * 30); c.clip(); }
-    // sandbag ring around the base
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * TAU;
-      c.fillStyle = i % 2 ? '#4f5a2c' : '#5d6b3a';
-      c.beginPath(); c.ellipse(Math.cos(a) * 13, 2 + Math.sin(a) * 6, 6, 4, a, 0, TAU); c.fill();
+    c.translate(0, (1 - rise) * 35);
+    if (rise < 1) {
+      c.beginPath();
+      c.rect(-35, -70 - (1 - rise) * 35, 70, 75 + (1 - rise) * 35);
+      c.clip();
     }
-    // tower: legs + platform
-    c.strokeStyle = '#3a444b'; c.lineWidth = 3; c.lineCap = 'round';
-    c.beginPath(); c.moveTo(-9, 2); c.lineTo(-6, headY + 6); c.moveTo(9, 2); c.lineTo(6, headY + 6); c.stroke();
-    c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1.2;
-    c.beginPath(); c.moveTo(-8, -6); c.lineTo(8, -12); c.moveTo(8, -6); c.lineTo(-8, -12); c.stroke();
-    c.fillStyle = '#4a565e'; this.rr(-12, headY + 3, 24, 5, 2); c.fill();
-    c.strokeStyle = '#20282d'; c.lineWidth = 1; c.stroke();
-    // head housing
-    c.fillStyle = '#39464e';
-    c.beginPath(); c.arc(0, headY, 9, 0, TAU); c.fill();
-    c.strokeStyle = '#20282d'; c.lineWidth = 2; c.stroke();
-    // twin barrels, recoiling
+
+    // --- Heavy Industrial Base / Tripod Mount ---
+    // Tripod feet / heavy anti-recoil ground anchor plates
+    c.fillStyle = '#111518';
+    c.beginPath(); c.ellipse(-18, 4, 6.5, 3.2, 0, 0, TAU); c.fill();
+    c.beginPath(); c.ellipse(18, 4, 6.5, 3.2, 0, 0, TAU); c.fill();
+    c.beginPath(); c.ellipse(0, 7, 6.5, 3.5, 0, 0, TAU); c.fill();
+    // Anchor spike bolts
+    c.fillStyle = '#637380';
+    c.fillRect(-20, 2, 4, 3); c.fillRect(16, 2, 4, 3); c.fillRect(-2, 5, 4, 3);
+
+    // Heavy reinforced tripod tubular steel legs
+    c.strokeStyle = '#22282e';
+    c.lineWidth = 5;
+    c.lineCap = 'round';
+    c.beginPath();
+    c.moveTo(-18, 4); c.lineTo(-5, headY + 8);
+    c.moveTo(18, 4); c.lineTo(5, headY + 8);
+    c.moveTo(0, 7); c.lineTo(0, headY + 8);
+    c.stroke();
+
+    // Leg hydraulic cylinders & chrome bevel highlights
+    c.strokeStyle = '#5a6975';
+    c.lineWidth = 2.2;
+    c.beginPath();
+    c.moveTo(-18, 3); c.lineTo(-5, headY + 8);
+    c.moveTo(18, 3); c.lineTo(5, headY + 8);
+    c.stroke();
+
+    // Cross-braces & reinforcement tension rods between tripod legs
+    c.strokeStyle = '#2d353b';
+    c.lineWidth = 2;
+    c.beginPath();
+    c.moveTo(-11, -1); c.lineTo(11, -1);
+    c.moveTo(-8, -9); c.lineTo(8, -9);
+    c.stroke();
+
+    // Center pivot column / traversal ring
+    c.fillStyle = '#22282d';
+    this.rr(-5, headY + 4, 10, 8, 2); c.fill();
+    c.fillStyle = '#3f4951';
+    c.fillRect(-4, headY + 6, 8, 2);
+
+    // Swivel mount ring / ball bearing
+    c.fillStyle = '#1c2226';
+    c.beginPath(); c.arc(0, headY + 3, 7, 0, TAU); c.fill();
+    c.fillStyle = '#5c6770';
+    c.beginPath(); c.arc(0, headY + 3, 5, 0, TAU); c.fill();
+    c.fillStyle = '#2c3339';
+    c.beginPath(); c.arc(0, headY + 3, 3, 0, TAU); c.fill();
+
+    // --- Machine Gun Turret Body (Aim-aligned) ---
     c.save();
-    c.translate(0, headY); c.rotate(t.ang);
-    c.translate(-t.recoil * 3, 0);
-    c.fillStyle = '#2a3630'; this.rr(-4, -5, 12, 10, 2); c.fill();
-    c.fillStyle = t.heat > 0.5 ? '#c86a4a' : '#8fe7d3';
-    this.rr(4, -4.2, 16, 3, 1.2); c.fill(); this.rr(4, 1.2, 16, 3, 1.2); c.fill();
-    if (t.heat > 0.3) {
-      c.save(); c.globalCompositeOperation = 'lighter';
-      c.fillStyle = `rgba(255,120,60,${(t.heat - 0.3) * 0.6})`; c.fillRect(10, -5, 10, 10);
+    c.translate(0, headY);
+    c.rotate(t.ang);
+
+    // Recoil kickback along weapon axis
+    const kick = t.recoil * 3.5;
+    c.translate(-kick, 0);
+
+    // Ammo Box / Magazine Can (mounted on side of gun receiver)
+    // Olive drab / tactical army green ammo can
+    c.fillStyle = '#3a4428';
+    this.rr(-6, 5, 13, 10, 2); c.fill();
+    c.strokeStyle = '#1e2416';
+    c.lineWidth = 1.2; c.stroke();
+    // Ammo can latch / yellow stripe / hazard mark
+    c.fillStyle = '#d4a024';
+    c.fillRect(-4, 7, 9, 2);
+    // Ammo feed belt entering receiver
+    c.fillStyle = '#d9b358';
+    c.beginPath();
+    c.arc(0, 4, 2.5, 0, TAU);
+    c.arc(2, 3, 2.2, 0, TAU);
+    c.fill();
+    c.strokeStyle = '#8a6518';
+    c.lineWidth = 0.8;
+    c.stroke();
+
+    // Gun receiver / breech housing (heavy dark gunmetal with side cooling vents)
+    c.fillStyle = '#1c2024';
+    this.rr(-14, -6, 21, 12, 2); c.fill();
+    c.strokeStyle = '#0e1114';
+    c.lineWidth = 1.6; c.stroke();
+
+    // Receiver top cover & tactical Picatinny rail
+    c.fillStyle = '#323a42';
+    this.rr(-12, -5.2, 16, 4.5, 1); c.fill();
+    c.fillStyle = '#111417';
+    for (let rx = -11; rx <= 2; rx += 2.5) {
+      c.fillRect(rx, -5.2, 1.2, 4.5);
+    }
+
+    // Gunner handles / spade grips & electric solenoid actuator
+    c.strokeStyle = '#272d33';
+    c.lineWidth = 2.2;
+    c.beginPath();
+    c.moveTo(-14, -4.5); c.lineTo(-18, -6); c.lineTo(-18, 6); c.lineTo(-14, 4.5);
+    c.stroke();
+    c.fillStyle = '#0f1215';
+    c.fillRect(-19, -5.5, 2.8, 11);
+
+    // Heavy Machine Gun Barrel assembly
+    // Barrel shroud / perforated heat jacket with cooling fins
+    const shroudCol = t.heat > 0.4 ? '#683626' : '#272f36';
+    c.fillStyle = shroudCol;
+    this.rr(7, -4.2, 17, 8.4, 1.5); c.fill();
+    c.strokeStyle = '#14181c';
+    c.lineWidth = 1.2; c.stroke();
+
+    // Perforation holes on heat shroud
+    c.fillStyle = '#0c0f12';
+    for (let hx = 9; hx <= 20; hx += 3.5) {
+      c.beginPath();
+      c.arc(hx, -2, 1, 0, TAU);
+      c.arc(hx, 2, 1, 0, TAU);
+      c.fill();
+    }
+
+    // Extended heavy steel barrel core
+    c.fillStyle = t.heat > 0.6 ? '#a14327' : '#191d21';
+    this.rr(24, -2.8, 9, 5.6, 1); c.fill();
+
+    // Heavy tactical muzzle brake / flash hider with side gas ports
+    c.fillStyle = '#2f373d';
+    this.rr(33, -3.6, 4.5, 7.2, 1); c.fill();
+    c.strokeStyle = '#0f1215';
+    c.lineWidth = 1; c.stroke();
+    c.fillStyle = '#0a0d0f';
+    c.fillRect(34.5, -2.6, 1.5, 5.2);
+
+    // Targeting Laser / Optical Scope on top
+    c.fillStyle = '#191f24';
+    this.rr(-5, -9.5, 12, 4, 1.2); c.fill();
+    c.fillStyle = '#ff2244';
+    c.beginPath(); c.arc(6.5, -7.5, 1.5, 0, TAU); c.fill();
+    // Scope lens reflection
+    c.fillStyle = '#ffffff';
+    c.beginPath(); c.arc(5.8, -8.1, 0.6, 0, TAU); c.fill();
+
+    // Overheat / firing glow
+    if (t.heat > 0.25) {
+      c.save();
+      c.globalCompositeOperation = 'lighter';
+      c.fillStyle = `rgba(255,100,30,${(t.heat - 0.25) * 0.75})`;
+      c.fillRect(12, -3.5, 20, 7);
       c.restore();
     }
-    c.restore();
-    // sensor eye tracks the target
-    c.fillStyle = '#56e3ff';
-    c.beginPath(); c.arc(Math.cos(t.ang) * 4, headY + Math.sin(t.ang) * 4, 2.6, 0, TAU); c.fill();
-    c.save(); c.globalCompositeOperation = 'lighter';
-    c.fillStyle = 'rgba(86,227,255,.35)'; c.beginPath(); c.arc(Math.cos(t.ang) * 4, headY + Math.sin(t.ang) * 4, 6, 0, TAU); c.fill();
-    c.restore();
-    c.restore();
-    c.restore();
+
+    // Muzzle flash when firing (recoil active)
+    if (t.recoil > 0.3) {
+      c.save();
+      c.globalCompositeOperation = 'lighter';
+      const fLen = 16 + Math.random() * 10;
+      const fH = 6 + Math.random() * 5;
+      c.fillStyle = 'rgba(255,225,120,0.95)';
+      c.beginPath();
+      c.moveTo(37, 0);
+      c.lineTo(37 + fLen, -fH);
+      c.lineTo(37 + fLen * 0.75, 0);
+      c.lineTo(37 + fLen, fH);
+      c.closePath();
+      c.fill();
+      c.fillStyle = 'rgba(255,255,255,0.95)';
+      c.beginPath();
+      c.arc(38, 0, 3, 0, TAU);
+      c.fill();
+      c.restore();
+    }
+
+    c.restore(); // end gun rotation
+
+    // Flash overlay on damage
+    if (t.flash > 0) {
+      c.save();
+      c.globalCompositeOperation = 'lighter';
+      c.fillStyle = `rgba(255,255,255,${t.flash * 0.8})`;
+      c.beginPath();
+      c.ellipse(0, headY, 18, 14, 0, 0, TAU);
+      c.fill();
+      c.restore();
+    }
+
+    // Small green targeting sensor status LED on base
+    c.fillStyle = t.hp / t.maxHp < 0.35 ? '#ff3b3b' : '#38ef7d';
+    c.beginPath();
+    c.arc(0, headY - 1, 1.4, 0, TAU);
+    c.fill();
+
+    c.restore(); // end build rise clip
+
+    // --- Health Bar for Turret ---
+    if (t.hp < t.maxHp && !t.dead) {
+      const hw = 26;
+      const hy = headY - 16;
+      c.fillStyle = 'rgba(0,0,0,0.65)';
+      this.rr(-hw / 2 - 1, hy - 1, hw + 2, 5, 2);
+      c.fill();
+
+      const hpRatio = clamp(t.hp / t.maxHp, 0, 1);
+      c.fillStyle = hpRatio > 0.5 ? '#38ef7d' : hpRatio > 0.25 ? '#ffd24a' : '#ff4d4d';
+      this.rr(-hw / 2, hy, hw * hpRatio, 3, 1.5);
+      c.fill();
+    }
+
+    c.restore(); // end turret draw
   }
 
   private drawArcs() {
@@ -2765,6 +3258,21 @@ export class Game {
     const hf = z.hitFlash;
     const sqX = 1 + hf * 1.2, sqY = 1 - hf * 0.9;
 
+    // Mutated zombie toxic aura and dripping bio-luminescence
+    if (z.type === 'mutant') {
+      c.save();
+      c.globalCompositeOperation = 'lighter';
+      const radG = c.createRadialGradient(z.x, z.y - drawH * 0.5, 2, z.x, z.y - drawH * 0.5, r * 2.2);
+      radG.addColorStop(0, 'rgba(50,255,120,0.35)');
+      radG.addColorStop(0.6, 'rgba(30,200,90,0.12)');
+      radG.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = radG;
+      c.beginPath();
+      c.arc(z.x, z.y - drawH * 0.5, r * 2.2, 0, TAU);
+      c.fill();
+      c.restore();
+    }
+
     // grounded shadow
     c.fillStyle = `rgba(0,0,0,${0.42 * rise})`;
     c.beginPath();
@@ -2804,12 +3312,12 @@ export class Game {
     }
     c.restore();
 
-    if ((z.type === 'tank' || z.type === 'brute') && z.hp < z.maxHp) {
+    if ((z.type === 'tank' || z.type === 'brute' || z.type === 'mutant') && z.hp < z.maxHp) {
       const bw = r * 2.1;
       const by = z.y - drawH + r * 0.4;
       c.fillStyle = 'rgba(0,0,0,.55)';
       c.fillRect(z.x - bw / 2, by, bw, 4);
-      c.fillStyle = z.type === 'brute' ? '#c065d8' : '#d8a23a';
+      c.fillStyle = z.type === 'brute' ? '#c065d8' : z.type === 'mutant' ? '#38ef7d' : '#d8a23a';
       c.fillRect(z.x - bw / 2, by, bw * (z.hp / z.maxHp), 4);
     }
   }

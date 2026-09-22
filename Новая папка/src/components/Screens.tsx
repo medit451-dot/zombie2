@@ -257,9 +257,22 @@ function Shell({ children, tone = 'acid' }: { children: React.ReactNode; tone?: 
 export function StartScreen({ scores, isTouch, muted, onStart, onMute }: {
   scores: ScoreRow[]; isTouch: boolean; muted: boolean; onStart: () => void; onMute: () => void;
 }) {
-  const sectors = ['I · OUTBREAK', 'II · ESCALATION', 'III · ONSLAUGHT', 'IV · OVERRUN', 'V · APOCALYPSE'];
-  const sectorTone = ['border-[#9dff4f44] text-[#b6ff80]', 'border-[#c8e05555] text-[#dcf08a]',
-    'border-[#ffb13d55] text-[#ffc980]', 'border-[#ff8a4455] text-[#ffb08a]', 'border-[#ff555555] text-[#ff8a8a]'];
+  const sectors = [
+    'I · OUTBREAK', 'II · INFESTATION', 'III · ESCALATION', 'IV · MUTATION', 'V · ONSLAUGHT',
+    'VI · OVERRUN', 'VII · BLOODBATH', 'VIII · CATACLYSM', 'IX · APOCALYPSE', 'X · EXTINCTION',
+  ];
+  const sectorTone = [
+    'border-[#9dff4f44] text-[#b6ff80]',
+    'border-[#a8f05544] text-[#c0f588]',
+    'border-[#c8e05555] text-[#dcf08a]',
+    'border-[#e4d54555] text-[#faea80]',
+    'border-[#ffb13d55] text-[#ffc980]',
+    'border-[#ff9a3d55] text-[#ffbe80]',
+    'border-[#ff8a4455] text-[#ffb08a]',
+    'border-[#ff6f4a55] text-[#ffa08e]',
+    'border-[#ff555555] text-[#ff8a8a]',
+    'border-[#ff383866] text-[#ff6868]',
+  ];
   const [art, setArt] = useState<{ hero: string | null; zombie: string | null }>({ hero: null, zombie: null });
   useEffect(() => onSpritesReady((p) => setArt({ hero: p.hero.portraitSide ?? p.hero.portrait, zombie: p.zombie.portrait })), []);
   return (
@@ -299,8 +312,8 @@ export function StartScreen({ scores, isTouch, muted, onStart, onMute }: {
         <div className="panel rounded-xl px-4 py-3 mt-4 text-left w-full">
           <div className="text-[10px] tracking-[.3em] text-[#8fbf75] font-bold mb-1.5 text-center">BRIEFING</div>
           <p className="text-[13px] sm:text-sm text-[#c2d4bc] leading-relaxed text-center">
-            The hive spawns endless infected. <span className="text-[#b6ff80] font-bold">Gun down the horde, shoot the glowing core to destroy each hive</span>,
-            bank the coins, then buy heavier guns and fortify your bunker between sectors. Survive all {LEVEL_COUNT} sectors — or be overrun.
+            The hive spawns infected in controlled waves. <span className="text-[#b6ff80] font-bold">Gun down the horde or shatter the hive core directly</span>,
+            bank the coins, then buy heavier guns and fortify your bunker between sectors. Clear all {LEVEL_COUNT} sectors to win.
           </p>
           <div className="grid grid-cols-2 gap-2 mt-3 text-[11px] sm:text-xs text-[#9fb898]">
             {isTouch ? (
@@ -474,12 +487,12 @@ export function Banner({ banner }: { banner: { title: string; sub: string; tone:
   if (!banner) return null;
   const color = banner.tone === 'red' ? '#ff7a6a' : banner.tone === 'amber' ? '#ffc980' : '#b6ff80';
   return (
-    <div key={banner.key} className="absolute inset-x-0 top-[22%] z-20 flex flex-col items-center pointer-events-none">
-      <div className="anim-banner text-center">
-        <div className="font-display text-3xl sm:text-5xl tracking-[.14em]" style={{ color, textShadow: '0 0 22px ' + color + '99, 0 3px 0 rgba(0,0,0,.7)' }}>
+    <div key={banner.key} className="absolute inset-x-0 top-[20%] z-20 flex flex-col items-center pointer-events-none px-4">
+      <div className="anim-banner text-center max-w-xl">
+        <div className="font-display text-4xl sm:text-5xl tracking-[.16em]" style={{ color, textShadow: '0 0 24px ' + color + '99, 0 3px 0 rgba(0,0,0,.8)' }}>
           {banner.title}
         </div>
-        <div className="text-xs sm:text-sm tracking-[.5em] font-bold text-white/80 mt-1">{banner.sub}</div>
+        <div className="text-xs sm:text-sm tracking-[.5em] font-bold text-white/90 mt-1 drop-shadow-[0_2px_4px_rgba(0,0,0,.9)]">{banner.sub}</div>
       </div>
     </div>
   );
